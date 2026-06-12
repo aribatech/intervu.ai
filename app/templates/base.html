@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="icon" href="/logo.svg" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body class="bg-white text-gray-900 antialiased">
+  <nav class="border-b border-gray-100">
+    <div class="max-w-3xl mx-auto px-5 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 font-bold tracking-tight">
+        <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0c1330] via-[#1c3f9c] to-[#2f6df0] text-white flex items-center justify-center text-sm">
+          <i class="fa-solid fa-microphone-lines"></i>
+        </span>{{ app_name }}
+      </a>
+      <div class="flex items-center gap-4 text-sm">
+        {% if company %}
+          <a href="/dashboard" class="text-gray-600 hover:text-gray-900">Dashboard</a>
+          <span class="text-gray-400">{{ company.email }}</span>
+          <a href="/logout" class="text-gray-600 hover:text-gray-900">Log out</a>
+        {% else %}
+          <a href="/login" class="text-gray-600 hover:text-gray-900">Log in</a>
+          <a href="/register" class="bg-neutral-900 text-white px-3 py-1.5 hover:bg-black">Sign up</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-3xl mx-auto px-5 py-10">
+    {% block content %}{% endblock %}
+  </main>
+
+  <a href="http://ariba.techyst.net/" target="_blank" rel="noopener"
+     style="position:fixed;bottom:20px;right:20px;background:#000;color:#fff;font-size:11px;font-weight:600;padding:6px 12px;border-radius:4px;text-decoration:none;letter-spacing:0.04em;box-shadow:0 2px 8px rgba(0,0,0,0.25);z-index:9999;">
+    Built with Ariba ↗
+  </a>
+</body>
+</html>
