@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · {{ app_name }}{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold tracking-tight">New interview</h1>
+<p class="text-gray-500 text-sm mt-1">The candidate gets an email invite with their join link.</p>
+
+<form method="post" action="/interviews/new" class="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-4 border border-gray-200 rounded-xl p-5">
+  <div>
+    <label class="text-sm font-semibold">Candidate name</label>
+    <input name="candidate_name" required class="w-full border-b-[1.5px] border-gray-200 py-2 focus:outline-none focus:border-gray-900" placeholder="Sara Khan" />
+  </div>
+  <div>
+    <label class="text-sm font-semibold">Candidate email</label>
+    <input name="candidate_email" type="email" required class="w-full border-b-[1.5px] border-gray-200 py-2 focus:outline-none focus:border-gray-900" placeholder="sara@example.com" />
+  </div>
+  <div>
+    <label class="text-sm font-semibold">Role</label>
+    <input name="role" required class="w-full border-b-[1.5px] border-gray-200 py-2 focus:outline-none focus:border-gray-900" placeholder="Backend Engineer" />
+  </div>
+  <div>
+    <label class="text-sm font-semibold">Interviewer name</label>
+    <input name="interviewer_name" class="w-full border-b-[1.5px] border-gray-200 py-2 focus:outline-none focus:border-gray-900" placeholder="Alex" />
+  </div>
+  <div class="sm:col-span-2">
+    <label class="text-sm font-semibold">Job description / focus <span class="text-gray-400 font-normal">(optional)</span></label>
+    <textarea name="job_description" rows="3" class="w-full border-[1.5px] border-gray-200 rounded-lg px-3 py-2 mt-1 focus:outline-none focus:border-gray-900" placeholder="Key responsibilities, skills to probe…"></textarea>
+  </div>
+  <div>
+    <label class="text-sm font-semibold">Language</label>
+    <input name="language" value="English" class="w-full border-b-[1.5px] border-gray-200 py-2 focus:outline-none focus:border-gray-900" />
+  </div>
+  <div>
+    <label class="text-sm font-semibold">Length</label>
+    <select name="max_minutes" class="w-full border-b-[1.5px] border-gray-200 py-2 bg-white focus:outline-none focus:border-gray-900">
+      <option value="8">8 minutes</option>
+      <option value="15" selected>15 minutes</option>
+      <option value="25">25 minutes</option>
+    </select>
+  </div>
+  <div class="sm:col-span-2">
+    <label class="text-sm font-semibold">Date &amp; time <span class="text-gray-400 font-normal">(optional — adds a calendar invite)</span></label>
+    <input name="scheduled_at" type="datetime-local" class="w-full border-b-[1.5px] border-gray-200 py-2 focus:outline-none focus:border-gray-900" />
+  </div>
+  <div class="sm:col-span-2">
+    <button class="bg-neutral-900 text-white px-6 py-3 font-semibold hover:bg-black">Create &amp; send invite</button>
+  </div>
+</form>
+
+<h2 class="text-lg font-bold tracking-tight mt-12">Interviews</h2>
+{% if not interviews %}
+  <p class="text-gray-500 text-sm mt-2">No interviews yet — create your first one above.</p>
+{% else %}
+<div class="mt-4 divide-y divide-gray-100 border border-gray-200 rounded-xl">
+  {% for it in interviews %}
+  <div class="p-4 flex items-center justify-between gap-4">
+    <div class="min-w-0">
+      <div class="font-medium truncate">{{ it.candidate_name }} <span class="text-gray-400">·</span> {{ it.role }}</div>
+      <div class="text-xs text-gray-500 truncate">
+        {{ it.candidate_email }}{% if it.scheduled_at %} <span class="text-gray-300">·</span> 🗓 {{ it.scheduled_at.strftime('%d %b, %I:%M %p') }}{% endif %}
+      </div>
+    </div>
+    <div class="flex items-center gap-3 shrink-0">
+      {% set c = {'created':'bg-gray-100 text-gray-700','in_progress':'bg-blue-100 text-blue-700','completed':'bg-emerald-100 text-emerald-700'} %}
+      <span class="text-xs px-2 py-1 rounded-full {{ c.get(it.status, 'bg-gray-100 text-gray-700') }}">{{ it.status.replace('_',' ') }}</span>
+      {% if it.status == 'completed' %}
+        <a href="/interviews/{{ it.id }}" class="text-sm underline">View report</a>
+      {% else %}
+        <button onclick="navigator.clipboard.writeText('{{ it.join_url }}')" class="text-sm underline">Copy link</button>
+        <a href="{{ it.join_url }}" target="_blank" class="text-sm underline">Open</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
