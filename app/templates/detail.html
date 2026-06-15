@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ it.candidate_name }} · {{ app_name }}{% endblock %}
+{% block content %}
+<a href="/dashboard" class="text-sm text-gray-500 hover:text-gray-900">&larr; Back to dashboard</a>
+
+<div class="flex items-start justify-between mt-3">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">{{ it.candidate_name }}</h1>
+    <p class="text-gray-500">{{ it.role }} · {{ it.candidate_email }}</p>
+  </div>
+  <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{{ it.status.replace('_',' ') }}</span>
+</div>
+
+{% if report %}
+<div class="mt-8 border border-gray-200 rounded-xl p-5">
+  <div class="flex items-baseline gap-3">
+    <div class="text-3xl font-bold">{{ report.overall }}<span class="text-base text-gray-400">/100</span></div>
+    <div class="text-sm font-semibold uppercase tracking-wide text-gray-600">{{ report.recommendation.replace('_',' ') }}</div>
+  </div>
+  <p class="text-gray-700 mt-3">{{ report.summary }}</p>
+
+  <h3 class="font-semibold mt-6 mb-2">Scores</h3>
+  <div class="space-y-2">
+    {% for s in report.scores %}
+    <div>
+      <div class="flex justify-between text-sm"><span class="font-medium">{{ s.competency.replace('_',' ') }}</span><span class="text-gray-500">{{ s.score }}/5</span></div>
+      <p class="text-xs text-gray-500">{{ s.evidence }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-6 mt-6">
+    <div>
+      <h3 class="font-semibold mb-1">Strengths</h3>
+      <ul class="list-disc list-inside text-sm text-gray-700">{% for x in report.strengths %}<li>{{ x }}</li>{% endfor %}</ul>
+    </div>
+    <div>
+      <h3 class="font-semibold mb-1">Concerns</h3>
+      <ul class="list-disc list-inside text-sm text-gray-700">{% for x in report.concerns %}<li>{{ x }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</div>
+{% else %}
+<p class="mt-8 text-gray-500">No report yet — it's generated when the interview is completed.</p>
+{% endif %}
+
+<h3 class="font-semibold mt-10 mb-2">Transcript</h3>
+{% if it.transcript %}
+<div class="space-y-3">
+  {% for t in it.transcript %}
+  <div class="text-sm"><span class="font-semibold {{ 'text-gray-900' if t.role == 'interviewer' else 'text-blue-700' }}">{{ 'Interviewer' if t.role == 'interviewer' else it.candidate_name }}:</span> {{ t.text }}</div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-500 text-sm">No transcript recorded.</p>
+{% endif %}
+{% endblock %}
