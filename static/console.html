@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Interviewer · Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-900 antialiased">
+  <div class="max-w-md mx-auto px-6 py-12">
+
+    <h1 class="text-3xl font-bold tracking-tight">AI Interviewer</h1>
+    <p class="text-gray-500 mt-1">Create a verbal interview and share the link.</p>
+
+    <!-- API key -->
+    <div class="mt-10">
+      <div class="text-[15px] font-semibold text-gray-900">API key</div>
+      <input id="apikey" type="password" class="w-full border-0 border-b-[1.5px] border-gray-200 bg-transparent py-2.5 text-[1.05rem] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 mt-1" placeholder="mp_live_…" />
+      <p class="text-xs text-gray-400 mt-1">Stored only in this browser.</p>
+    </div>
+
+    <!-- candidate / role -->
+    <div class="mt-8">
+      <div class="text-[15px] font-semibold text-gray-900">Candidate name</div>
+      <input id="candidate_name" class="w-full border-0 border-b-[1.5px] border-gray-200 bg-transparent py-2.5 text-[1.05rem] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 mt-1" placeholder="e.g. Sara Khan" />
+    </div>
+    <div class="mt-7">
+      <div class="text-[15px] font-semibold text-gray-900">Role</div>
+      <input id="role" class="w-full border-0 border-b-[1.5px] border-gray-200 bg-transparent py-2.5 text-[1.05rem] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 mt-1" placeholder="e.g. Backend Engineer" />
+    </div>
+    <div class="grid grid-cols-2 gap-5 mt-7">
+      <div>
+        <div class="text-[15px] font-semibold text-gray-900">Company</div>
+        <input id="company" class="w-full border-0 border-b-[1.5px] border-gray-200 bg-transparent py-2.5 text-[1.05rem] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 mt-1" placeholder="defaults to your account" />
+      </div>
+      <div>
+        <div class="text-[15px] font-semibold text-gray-900">Interviewer name</div>
+        <input id="interviewer_name" class="w-full border-0 border-b-[1.5px] border-gray-200 bg-transparent py-2.5 text-[1.05rem] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 mt-1" placeholder="Alex" />
+      </div>
+    </div>
+
+    <!-- focus chips -->
+    <div class="mt-8">
+      <div class="text-[15px] font-semibold text-gray-900">Focus areas</div>
+      <div id="chips" class="flex flex-wrap gap-2.5 mt-3"></div>
+    </div>
+
+    <!-- job description -->
+    <div class="mt-8">
+      <div class="text-[15px] font-semibold text-gray-900">Job description <span class="text-xs text-gray-400 font-normal">(optional)</span></div>
+      <textarea id="job_description" rows="3"
+        class="w-full border-[1.5px] border-gray-200 rounded-lg bg-transparent px-3 py-2.5 text-[.98rem] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 mt-1"
+        placeholder="Paste key responsibilities or requirements…"></textarea>
+    </div>
+
+    <!-- language / minutes -->
+    <div class="grid grid-cols-2 gap-5 mt-7">
+      <div>
+        <div class="text-[15px] font-semibold text-gray-900">Language</div>
+        <input id="language" class="w-full border-0 border-b-[1.5px] border-gray-200 bg-transparent py-2.5 text-[1.05rem] text-gray-900 focus:outline-none focus:border-gray-900 mt-1" value="English" />
+      </div>
+      <div>
+        <div class="text-[15px] font-semibold text-gray-900">Length</div>
+        <select id="max_minutes" class="w-full border-0 border-b-[1.5px] border-gray-200 bg-white py-2.5 text-[1.05rem] text-gray-900 focus:outline-none focus:border-gray-900 mt-1">
+          <option value="8">8 minutes</option>
+          <option value="15" selected>15 minutes</option>
+          <option value="25">25 minutes</option>
+          <option value="40">40 minutes</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="generate" class="w-full bg-neutral-900 text-white p-4 text-base font-semibold hover:bg-black disabled:opacity-50 mt-10">Generate interview link</button>
+    <div id="result" class="hidden mt-5"></div>
+
+    <div class="text-center mt-6">
+      <button id="toggleFetch" class="text-gray-500 underline underline-offset-[3px] text-sm">Fetch results for an interview</button>
+    </div>
+
+    <!-- results -->
+    <div id="fetchPanel" class="hidden mt-6 pt-6 border-t border-gray-100">
+      <div class="text-[15px] font-semibold text-gray-900">Interview ID</div>
+      <input id="fetch_id" class="w-full border-0 border-b-[1.5px] border-gray-200 bg-transparent py-2.5 text-[1.05rem] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 mt-1" placeholder="interview_id" />
+      <button id="fetch" class="w-full bg-gray-700 hover:bg-gray-800 text-white p-4 text-base font-semibold mt-5">Fetch transcript &amp; report</button>
+      <div id="fetchResult" class="hidden mt-5"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    $("apikey").value = localStorage.getItem("mp_api_key") || "";
+    $("apikey").onchange = () => localStorage.setItem("mp_api_key", $("apikey").value.trim());
+    const headers = () => ({ "content-type": "application/json", "x-api-key": $("apikey").value.trim() });
+
+    const CHIP = "px-4 py-2 rounded-full border-[1.5px] border-gray-200 text-gray-700 text-[.92rem] cursor-pointer select-none transition hover:border-gray-400";
+    const CHIP_ON = " !bg-neutral-900 !text-white !border-neutral-900";
+
+    const FOCUS = ["Communication", "Problem solving", "Past experience", "Technical", "System design", "Leadership", "Culture fit"];
+    const selected = new Set();
+    function renderChips() {
+      const c = $("chips"); c.innerHTML = "";
+      FOCUS.forEach(f => {
+        const el = document.createElement("div");
+        el.className = CHIP + (selected.has(f) ? CHIP_ON : "");
+        el.textContent = f;
+        el.onclick = () => { selected.has(f) ? selected.delete(f) : selected.add(f); renderChips(); };
+        c.appendChild(el);
+      });
+      const add = document.createElement("div");
+      add.className = CHIP; add.textContent = "+ Other";
+      add.onclick = () => { const v = prompt("Add a focus area"); if (v && v.trim()) { FOCUS.push(v.trim()); selected.add(v.trim()); renderChips(); } };
+      c.appendChild(add);
+    }
+    renderChips();
+
+    function card(html, err) {
+      return `<div class="rounded-xl p-4 text-sm border ${err ? 'border-red-200 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-50'}">${html}</div>`;
+    }
+
+    $("generate").onclick = async () => {
+      const box = $("result"); box.classList.remove("hidden");
+      if (!$("apikey").value.trim()) { box.innerHTML = card("Enter your API key first.", true); return; }
+      const body = {
+        candidate_name: $("candidate_name").value.trim() || "Candidate",
+        company: $("company").value.trim(),
+        interviewer_name: $("interviewer_name").value.trim(),
+        role: $("role").value.trim() || "the role",
+        job_description: $("job_description").value.trim(),
+        focus_areas: [...selected],
+        language: $("language").value.trim() || "English",
+        max_minutes: parseInt($("max_minutes").value) || 15,
+      };
+      $("generate").disabled = true; $("generate").textContent = "Generating…";
+      try {
+        const r = await fetch("/v1/interviews", { method: "POST", headers: headers(), body: JSON.stringify(body) });
+        const d = await r.json();
+        if (!r.ok) { box.innerHTML = card(esc(d.detail || "Failed"), true); return; }
+        box.innerHTML = card(`
+      <div class="font-semibold text-gray-900">Interview ready</div>
+      <div class="text-gray-500 text-xs mt-2">Candidate link</div>
+      <a href="${d.join_url}" target="_blank" class="text-gray-900 underline break-all">${d.join_url}</a>
+      <div class="flex gap-2 mt-3">
+        <button class="px-3 py-2 bg-gray-900 text-white text-xs" onclick="navigator.clipboard.writeText('${d.join_url}')">Copy link</button>
+        <button class="px-3 py-2 border border-gray-300 text-xs" onclick="window.open('${d.join_url}','_blank')">Open</button>
+      </div>
+      <div class="text-gray-400 text-xs mt-3">id ${d.interview_id}</div>`);
+        $("fetch_id").value = d.interview_id;
+      } catch (e) { box.innerHTML = card(esc(String(e)), true); }
+      finally { $("generate").disabled = false; $("generate").textContent = "Generate interview link"; }
+    };
+
+    $("toggleFetch").onclick = () => $("fetchPanel").classList.toggle("hidden");
+
+    $("fetch").onclick = async () => {
+      const box = $("fetchResult"); box.classList.remove("hidden");
+      const id = $("fetch_id").value.trim();
+      if (!id) { box.innerHTML = card("Enter an interview_id.", true); return; }
+      try {
+        const r = await fetch("/v1/interviews/" + id, { headers: headers() });
+        const d = await r.json();
+        if (!r.ok) { box.innerHTML = card(esc(d.detail || "Failed"), true); return; }
+        const rep = d.report
+          ? `Overall ${d.report.overall}/100 — ${d.report.recommendation}\n\n` +
+          d.report.scores.map(s => `${s.competency}: ${s.score}/5 — ${s.evidence}`).join("\n\n") +
+          `\n\nStrengths:\n- ${d.report.strengths.join("\n- ")}` +
+          `\n\nConcerns:\n- ${d.report.concerns.join("\n- ")}\n\n${d.report.summary}`
+          : "(no report yet — interview not finished)";
+        const tr = d.transcript.map(t => `${t.role}: ${t.text}`).join("\n") || "(empty)";
+        box.innerHTML = card(`
+      <div>Status <b>${d.status}</b> · ${esc(d.candidate_name)} / ${esc(d.role)}</div>
+      <div class="text-gray-500 text-xs mt-3 mb-1">Report</div>
+      <pre class="whitespace-pre-wrap text-xs bg-white border border-gray-200 p-3 rounded-lg max-h-72 overflow-auto">${esc(rep)}</pre>
+      <div class="text-gray-500 text-xs mt-3 mb-1">Transcript</div>
+      <pre class="whitespace-pre-wrap text-xs bg-white border border-gray-200 p-3 rounded-lg max-h-72 overflow-auto">${esc(tr)}</pre>`);
+      } catch (e) { box.innerHTML = card(esc(String(e)), true); }
+    };
+  </script>
+</body>
+</html>
