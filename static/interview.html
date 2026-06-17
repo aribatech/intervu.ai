@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interview</title>
+<link rel="icon" href="/logo.svg" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      keyframes: {
+        ripple: { '0%': { boxShadow: '0 0 0 0 rgba(255,255,255,.30)' },
+                  '70%': { boxShadow: '0 0 0 30px rgba(255,255,255,0)' },
+                  '100%': { boxShadow: '0 0 0 0 rgba(255,255,255,0)' } },
+        floatup: { '0%': { transform: 'translateY(0) scale(.5)', opacity: '0' },
+                   '12%': { transform: 'translateY(-12px) scale(1)', opacity: '1' },
+                   '100%': { transform: 'translateY(-280px) scale(1.15)', opacity: '0' } },
+      },
+      animation: { ripple: 'ripple 1.4s infinite', floatup: 'floatup 2.5s ease-out forwards' },
+    } },
+  };
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body class="bg-white text-gray-900 antialiased">
+
+<!-- ===================== LOBBY ===================== -->
+<section id="lobby" class="min-h-screen flex flex-col items-center justify-center gap-7 px-5">
+  <div class="text-center">
+    <h1 id="lobbyTitle" class="text-3xl font-bold tracking-tight">Loading…</h1>
+    <p id="lobbySub" class="text-gray-500 mt-1"></p>
+  </div>
+  <div class="relative w-full max-w-lg aspect-video rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
+    <video id="preview" autoplay muted playsinline class="w-full h-full object-cover -scale-x-100 opacity-0 transition-opacity duration-300"></video>
+    <div id="previewOff" class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-400 transition-opacity duration-300">
+      <i class="fa-solid fa-video-slash text-2xl"></i><span id="previewMsg" class="text-sm">Camera is off</span>
+    </div>
+    <div class="absolute bottom-3 inset-x-0 flex justify-center gap-3">
+      <button id="camToggle" class="w-11 h-11 rounded-full border-[1.5px] border-gray-200 bg-white text-gray-700 flex items-center justify-center transition hover:border-gray-400"><i class="fa-solid fa-video"></i></button>
+    </div>
+  </div>
+  <div class="flex flex-col items-center gap-4">
+    <button id="enable" class="bg-neutral-900 text-white px-8 py-3.5 font-semibold hover:bg-black disabled:opacity-50">Enable camera</button>
+    <button id="join" class="bg-neutral-900 text-white px-8 py-3.5 font-semibold hover:bg-black hidden">Join interview</button>
+    <p class="text-xs text-gray-400 max-w-sm text-center leading-relaxed">
+      Speak naturally — the interviewer hears you in real time and replies like a real call. You can interrupt anytime.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== MEETING ===================== -->
+<section id="meeting" class="hidden fixed inset-0 bg-[#202124] text-white flex flex-col">
+  <div id="stage" class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 min-h-0">
+    <!-- interviewer -->
+    <div id="interviewerTile" class="group relative rounded-xl bg-[#3c4043] overflow-hidden flex items-center justify-center">
+      <div id="spinner" class="absolute w-8 h-8 rounded-full border-[3px] border-white/20 border-t-white animate-spin"></div>
+      <div id="orb" class="w-32 h-32 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-500 opacity-0 transition-opacity duration-300"></div>
+      <span class="absolute bottom-3 left-3.5 text-sm text-white flex items-center gap-2 [text-shadow:0_1px_3px_rgba(0,0,0,.7)]"><i id="intMic" class="fa-solid fa-microphone text-xs"></i>Interviewer</span>
+      <button class="tmenu-btn absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-30" data-menu="intMenu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+      <div id="intMenu" class="tmenu hidden absolute top-12 right-2.5 bg-[#2a2b2e] border border-white/10 rounded-lg min-w-[11rem] p-1.5 z-40 shadow-2xl">
+        <button data-act="pin" data-tile="interviewerTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-thumbtack w-4 text-center"></i><span>Pin</span></button>
+        <button data-act="full" data-tile="interviewerTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-expand w-4 text-center"></i><span>Fullscreen</span></button>
+      </div>
+    </div>
+    <!-- self -->
+    <div id="selfTile" class="group relative rounded-xl bg-[#3c4043] overflow-hidden flex items-center justify-center">
+      <video id="self" autoplay muted playsinline class="w-full h-full object-cover -scale-x-100"></video>
+      <div id="selfOff" class="absolute inset-0 flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none"><div id="selfAvatar" class="w-32 h-32 rounded-full bg-[#5f6368] text-[#e8eaed] flex items-center justify-center text-5xl font-medium">Y</div></div>
+      <span class="absolute bottom-3 left-3.5 text-sm text-white flex items-center gap-2 [text-shadow:0_1px_3px_rgba(0,0,0,.7)]"><i id="selfMic" class="fa-solid fa-microphone text-xs"></i><span id="selfName">You</span></span>
+      <button class="tmenu-btn absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-30" data-menu="selfMenu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+      <div id="selfMenu" class="tmenu hidden absolute top-12 right-2.5 bg-[#2a2b2e] border border-white/10 rounded-lg min-w-[11rem] p-1.5 z-40 shadow-2xl">
+        <button data-act="pin" data-tile="selfTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-thumbtack w-4 text-center"></i><span>Pin</span></button>
+        <button data-act="mirror" data-tile="selfTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-arrow-right-arrow-left w-4 text-center"></i><span>Turn off mirror</span></button>
+        <button data-act="full" data-tile="selfTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-expand w-4 text-center"></i><span>Fullscreen</span></button>
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-cols-3 items-center px-5 py-3">
+    <div class="hidden sm:flex items-center gap-3 text-sm text-neutral-300 min-w-0">
+      <span id="timer" class="tabular-nums">00:00</span><span class="text-neutral-600">|</span><span id="hdrRole" class="truncate">Interview</span>
+    </div>
+    <div class="relative flex items-center justify-center gap-2.5 col-start-2">
+      <button id="mMic" class="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4e51] text-white flex items-center justify-center transition" title="Turn off microphone"><i class="fa-solid fa-microphone"></i></button>
+      <button id="mCam" class="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4e51] text-white flex items-center justify-center transition" title="Turn off camera"><i class="fa-solid fa-video"></i></button>
+      <button id="mReact" class="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4e51] text-white flex items-center justify-center transition" title="Send a reaction"><i class="fa-solid fa-face-smile"></i></button>
+      <div id="reactBar" class="hidden absolute bottom-16 left-1/2 -translate-x-1/2 bg-[#2a2b2e] border border-white/10 rounded-full p-1.5 flex gap-0.5 shadow-2xl">
+        <button data-e="👍" class="w-10 h-10 rounded-full text-xl hover:bg-white/10 transition">👍</button>
+        <button data-e="❤️" class="w-10 h-10 rounded-full text-xl hover:bg-white/10 transition">❤️</button>
+        <button data-e="😂" class="w-10 h-10 rounded-full text-xl hover:bg-white/10 transition">😂</button>
+        <button data-e="🎉" class="w-10 h-10 rounded-full text-xl hover:bg-white/10 transition">🎉</button>
+        <button data-e="👏" class="w-10 h-10 rounded-full text-xl hover:bg-white/10 transition">👏</button>
+        <button data-e="😮" class="w-10 h-10 rounded-full text-xl hover:bg-white/10 transition">😮</button>
+      </div>
+      <button id="leave" class="h-12 px-6 rounded-full bg-[#ea4335] hover:bg-[#d93025] text-white flex items-center justify-center text-lg transition" title="Leave call"><i class="fa-solid fa-phone"></i></button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== END ===================== -->
+<section id="end" class="hidden min-h-screen flex flex-col items-center justify-center gap-3 text-center px-5">
+  <div class="w-14 h-14 rounded-full bg-gray-900 text-white flex items-center justify-center"><i class="fa-solid fa-check text-xl"></i></div>
+  <h1 class="text-2xl font-bold tracking-tight">Interview complete</h1>
+  <p class="text-gray-500 max-w-sm">Thanks for your time — you can close this tab.</p>
+</section>
+
+<script type="module">
+import { Conversation } from "https://esm.sh/@elevenlabs/client";
+
+const TOKEN = location.pathname.split("/").filter(Boolean).pop();
+const $ = (id) => document.getElementById(id);
+const api = (p, o) => fetch(`/v1/join/${TOKEN}${p}`, o);
+const setIcon = (el, cls) => el.firstElementChild.className = cls;
+
+let camStream = null, conversation = null, conversationId = null;
+let camOn = true, micMuted = false, mirrored = true, pinnedId = null;
+let started = 0, ticking = null, finished = false;
+
+// ---------- meta ----------
+(async function loadMeta() {
+  try {
+    const r = await api(""); if (!r.ok) throw new Error((await r.json()).detail || "unavailable");
+    const m = await r.json();
+    $("lobbyTitle").textContent = `Interview for ${m.role}`;
+    $("lobbySub").textContent = `Hi ${m.candidate_name} — about ${m.max_minutes} min, in ${m.language}.`;
+    $("selfName").textContent = m.candidate_name;
+    $("selfAvatar").textContent = (m.candidate_name || "Y").trim().charAt(0).toUpperCase();
+    $("hdrRole").textContent = `Interview · ${m.role}`;
+    if (m.status === "completed") { $("lobby").classList.add("hidden"); $("end").classList.remove("hidden"); }
+  } catch (e) {
+    $("lobbyTitle").textContent = "Interview unavailable";
+    $("lobbySub").textContent = String(e.message || e);
+    $("enable").classList.add("hidden");
+  }
+})();
+
+// ---------- camera (self-view only; the SDK owns the mic) ----------
+$("enable").onclick = async () => {
+  $("enable").disabled = true; $("previewMsg").textContent = "Requesting camera…";
+  try { camStream = await navigator.mediaDevices.getUserMedia({ video: true }); camOn = true; }
+  catch { camOn = false; $("lobbySub").textContent = "Camera unavailable — you can still join with voice only."; }
+  await bindPreview();
+  $("enable").classList.add("hidden"); $("join").classList.remove("hidden");
+};
+
+async function bindPreview() {
+  const v = $("preview"); const has = camOn && !!camStream;
+  v.srcObject = camStream || null; if (has) { try { await v.play(); } catch {} }
+  v.classList.toggle("opacity-0", !has);
+  $("previewOff").classList.toggle("opacity-0", has);
+  const btn = $("camToggle");
+  ["!bg-[#fee2e2]","!border-[#fecaca]","!text-[#dc2626]"].forEach(c => btn.classList.toggle(c, !camOn));
+  setIcon(btn, camOn ? "fa-solid fa-video" : "fa-solid fa-video-slash");
+}
+
+$("camToggle").onclick = async () => {
+  if (!camStream) { try { camStream = await navigator.mediaDevices.getUserMedia({ video: true }); } catch { return; } }
+  camOn = !camOn; camStream.getVideoTracks().forEach(t => t.enabled = camOn);
+  await bindPreview();
+};
+
+// ---------- join → start the realtime agent ----------
+$("join").onclick = async () => {
+  $("self").srcObject = camStream || null; if (camStream) { try { await $("self").play(); } catch {} }
+  setCamUI(camOn);
+  $("lobby").classList.add("hidden"); $("meeting").classList.remove("hidden");
+  started = Date.now(); ticking = setInterval(tick, 1000);
+  if (camOn) captureSnapshot();
+
+  let cfg;
+  try {
+    const r = await api("/connect", { method: "POST" });
+    if (!r.ok) { failSpinner(); return; }
+    cfg = await r.json();
+  } catch { failSpinner(); return; }
+
+  try {
+    conversation = await Conversation.startSession({
+      signedUrl: cfg.signed_url,
+      dynamicVariables: cfg.dynamic_variables,
+      onConnect: ({ conversationId: id }) => {
+        conversationId = id || conversationId;
+        $("spinner").classList.add("hidden"); $("orb").classList.remove("opacity-0");
+      },
+      onModeChange: ({ mode }) => {
+        const speaking = mode === "speaking";
+        $("orb").classList.toggle("animate-ripple", speaking);
+        setActive($("interviewerTile"), speaking);
+        setActive($("selfTile"), !speaking && !micMuted);
+      },
+      onDisconnect: () => finalize(),
+      onError: () => {},
+    });
+    if (!conversationId && conversation.getId) { try { conversationId = conversation.getId(); } catch {} }
+  } catch { failSpinner(); }
+};
+
+function setActive(tile, on) {
+  ["ring-2","ring-[#8ab4f8]","ring-inset"].forEach(c => tile.classList.toggle(c, on));
+}
+function setCamUI(on) {
+  camOn = on;
+  $("mCam").classList.toggle("!bg-[#ea4335]", !on);
+  setIcon($("mCam"), on ? "fa-solid fa-video" : "fa-solid fa-video-slash");
+  $("mCam").title = on ? "Turn off camera" : "Turn on camera";
+  const so = $("selfOff"); so.classList.toggle("opacity-0", on); so.classList.toggle("pointer-events-none", on);
+}
+function captureSnapshot() {
+  try { const v=$("self"), c=document.createElement("canvas");
+    c.width=v.videoWidth||640; c.height=v.videoHeight||480; c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+    c.toBlob((b)=>{ if(!b) return; const fd=new FormData(); fd.append("image",b,"snap.jpg"); api("/snapshot",{method:"POST",body:fd}).catch(()=>{}); }, "image/jpeg", .8);
+  } catch {}
+}
+const tick = () => { const s=((Date.now()-started)/1000)|0;
+  $("timer").textContent = `${String((s/60)|0).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; };
+function failSpinner(){ $("spinner").classList.add("!border-t-red-500"); }
+
+// ---------- in-call controls ----------
+$("mMic").onclick = async () => {
+  micMuted = !micMuted;
+  try { await conversation?.setMicMuted?.(micMuted); } catch {}
+  $("mMic").classList.toggle("!bg-[#ea4335]", micMuted);
+  setIcon($("mMic"), micMuted ? "fa-solid fa-microphone-slash" : "fa-solid fa-microphone");
+  $("mMic").title = micMuted ? "Turn on microphone" : "Turn off microphone";
+  $("selfMic").className = micMuted ? "fa-solid fa-microphone-slash text-xs text-[#ea4335]" : "fa-solid fa-microphone text-xs";
+  if (micMuted) setActive($("selfTile"), false);
+};
+$("mCam").onclick = async () => {
+  if (!camStream) { try { camStream = await navigator.mediaDevices.getUserMedia({ video: true }); $("self").srcObject = camStream; await $("self").play(); } catch { return; } }
+  camOn = !camOn; camStream.getVideoTracks().forEach(t => t.enabled = camOn);
+  setCamUI(camOn);
+  if (camOn) setTimeout(captureSnapshot, 400);
+};
+$("leave").onclick = () => finalize();
+
+// ---------- reactions ----------
+const LEFTS = ["left-[42%]","left-[47%]","left-[52%]","left-[57%]"];
+$("mReact").onclick = (e) => { e.stopPropagation(); $("reactBar").classList.toggle("hidden"); };
+$("reactBar").querySelectorAll("button").forEach(b => b.onclick = (e) => {
+  e.stopPropagation(); spawnReaction(b.dataset.e); $("reactBar").classList.add("hidden");
+});
+function spawnReaction(emoji) {
+  const el = document.createElement("div");
+  el.className = `fixed bottom-[5.5rem] text-4xl pointer-events-none animate-floatup z-[60] ${LEFTS[(Math.random()*LEFTS.length)|0]}`;
+  el.textContent = emoji;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// ---------- tile context menus ----------
+document.querySelectorAll(".tmenu-btn").forEach(btn => btn.onclick = (e) => {
+  e.stopPropagation();
+  const m = $(btn.dataset.menu);
+  document.querySelectorAll(".tmenu").forEach(x => { if (x !== m) x.classList.add("hidden"); });
+  m.classList.toggle("hidden");
+});
+document.querySelectorAll(".tmenu button").forEach(b => b.onclick = (e) => {
+  e.stopPropagation();
+  const { act, tile: tileId } = b.dataset, tile = $(tileId);
+  if (act === "pin") togglePin(tileId);
+  else if (act === "full") { try { tile.requestFullscreen?.(); } catch {} }
+  else if (act === "mirror") {
+    mirrored = !mirrored;
+    $("self").classList.toggle("!scale-x-100", !mirrored);
+    b.querySelector("span").textContent = mirrored ? "Turn off mirror" : "Turn on mirror";
+  }
+  b.closest(".tmenu").classList.add("hidden");
+});
+function togglePin(tileId) {
+  const stage = $("stage"), other = tileId === "interviewerTile" ? "selfTile" : "interviewerTile";
+  const pin = pinnedId !== tileId;
+  pinnedId = pin ? tileId : null;
+  stage.classList.toggle("md:grid-cols-2", !pin);
+  $(other).classList.toggle("hidden", pin);
+  document.querySelectorAll('.tmenu button[data-act="pin"]').forEach(pb =>
+    pb.querySelector("span").textContent = (pb.dataset.tile === pinnedId) ? "Unpin" : "Pin");
+}
+document.addEventListener("click", () => {
+  $("reactBar").classList.add("hidden");
+  document.querySelectorAll(".tmenu").forEach(x => x.classList.add("hidden"));
+});
+
+// ---------- end + report ----------
+function finalize() {
+  if (finished) return; finished = true;
+  clearInterval(ticking);
+  // 1) switch to the end screen IMMEDIATELY (don't wait on anything)
+  $("meeting").classList.add("hidden"); $("end").classList.remove("hidden");
+  // 2) close the agent session + stop camera
+  try { conversation?.endSession?.(); } catch {}
+  if (camStream) camStream.getTracks().forEach(t => t.stop());
+  // 3) fire the transcript→report request in the background (server polls ~12s)
+  if (conversationId) {
+    api("/complete", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ conversation_id: conversationId }) }).catch(()=>{});
+  } else {
+    api("/finish", { method:"POST" }).catch(()=>{});
+  }
+}
+</script>
+<a href="http://ariba.techyst.net/" target="_blank" rel="noopener"
+   style="position:fixed;bottom:20px;right:20px;background:#000;color:#fff;font-size:11px;font-weight:600;padding:6px 12px;border-radius:4px;text-decoration:none;letter-spacing:0.04em;box-shadow:0 2px 8px rgba(0,0,0,0.25);z-index:9999;">
+  Built with Ariba ↗
+</a>
+</body>
+</html>
