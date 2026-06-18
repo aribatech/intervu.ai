@@ -1,0 +1,20 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Voxa">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0c1330"/>
+      <stop offset="0.55" stop-color="#1c3f9c"/>
+      <stop offset="1" stop-color="#2f6df0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- rounded app-icon tile -->
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+
+  <!-- microphone (matches the FontAwesome mic mark) -->
+  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="212" y="138" width="88" height="150" rx="44" fill="#ffffff" stroke="none"/>
+    <path d="M170 264 a 86 86 0 0 0 172 0"/>
+    <line x1="256" y1="350" x2="256" y2="392"/>
+    <line x1="212" y1="392" x2="300" y2="392"/>
+  </g>
+</svg>
