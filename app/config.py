@@ -19,13 +19,13 @@ class Settings(BaseSettings):
     elevenlabs_agent_id: str = ""
     elevenlabs_agent_llm: str = "gpt-4o"
 
-    database_url: str = "sqlite+aiosqlite:///./mockpilot.db"
+    database_url: str = "sqlite+aiosqlite:////tmp/mockpilot.db"
 
     public_base_url: str = "http://127.0.0.1:8000"
 
     interview_ttl_minutes: int = 1440
 
-    app_name: str = "Voxa"
+    app_name: str = "Voxa AI"
     secret_key: str = "dev-secret-change-me"
 
     smtp_host: str = ""
