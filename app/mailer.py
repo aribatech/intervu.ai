@@ -1,8 +1,3 @@
-"""Email sending (SMTP) with a console fallback for dev.
-
-If SMTP_HOST is not configured, emails are printed to the console instead of
-being sent — so the app works end-to-end without a mail server.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -16,8 +11,6 @@ from .config import get_settings
 
 
 class _IPv4Only:
-    """Force IPv4 DNS during SMTP — avoids 'Network is unreachable' on hosts with
-    no IPv6 route (Gmail resolves to IPv6 first). Scoped + restored."""
     def __enter__(self):
         self._orig = socket.getaddrinfo
         socket.getaddrinfo = lambda host, port, family=0, *a, **k: \
@@ -43,7 +36,6 @@ def _send_sync(to: str, subject: str, html: str, ics: str | None) -> None:
         msg.add_attachment(ics.encode(), maintype="text", subtype="calendar",
                            filename="interview.ics", params={"method": "REQUEST"})
 
-    # SSL (port 465) vs STARTTLS (port 587). STARTTLS implied when smtp_starttls=true.
     use_ssl = not s.smtp_starttls
     SMTPClass = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
     with _IPv4Only():
@@ -66,14 +58,11 @@ async def send_email(to: str, subject: str, html: str, ics: str | None = None) -
         return
     try:
         await asyncio.to_thread(_send_sync, to, subject, html, ics)
-    except Exception as e:  # never let email failure break the request
+    except Exception as e:
         print(f"[email:error] to={to}: {e}")
 
 
-# ---------- calendar helpers ----------
-
 def _floating(dt: datetime) -> str:
-    """Local 'floating' calendar time (shown in the viewer's own timezone)."""
     return dt.strftime("%Y%m%dT%H%M%S")
 
 
@@ -104,15 +93,13 @@ def gcal_link(title: str, details: str, location: str, start: datetime, minutes:
     )
 
 
-# ---------- templates ----------
-
 def _wrap(title: str, body: str) -> str:
     app = get_settings().app_name
     return (
         f'<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;'
         f'color:#111;line-height:1.6">'
         f'<h2 style="margin:0 0 12px">{title}</h2>{body}'
-        f'<p style="color:#888;font-size:12px;margin-top:24px">— {app}</p></div>'
+        f'<p style="color:#888;font-size:12px;margin-top:24px">- {app}</p></div>'
     )
 
 
@@ -124,12 +111,12 @@ def invite_email(candidate_name: str, company: str, role: str, join_url: str,
     if scheduled_at:
         pretty = scheduled_at.strftime("%A, %d %B %Y at %I:%M %p")
         when = f"<p>It's scheduled for <b>{pretty}</b> (your local time).</p>"
-        link = gcal_link(f"Interview — {role} at {company}",
+        link = gcal_link(f"Interview - {role} at {company}",
                          f"Join your interview: {join_url}", join_url, scheduled_at, minutes)
         cal = (
             f'<p style="margin-top:8px"><a href="{link}" target="_blank" '
             f'style="color:#2563eb">Add to Google Calendar</a> '
-            f'<span style="color:#888;font-size:13px">— or open the attached .ics</span></p>'
+            f'<span style="color:#888;font-size:13px">- or open the attached .ics</span></p>'
         )
     body = (
         f"<p>Hi {candidate_name},</p>"
@@ -169,7 +156,7 @@ def candidate_done_email(candidate_name: str, company: str, role: str) -> tuple[
 
 def company_done_email(candidate_name: str, role: str, recommendation: str,
                        overall: int | None, report_url: str) -> tuple[str, str]:
-    subject = f"Interview complete: {candidate_name} — {role}"
+    subject = f"Interview complete: {candidate_name} - {role}"
     score = f"{overall}/100" if overall is not None else "n/a"
     body = (
         f"<p><b>{candidate_name}</b> completed the interview for <b>{role}</b>.</p>"

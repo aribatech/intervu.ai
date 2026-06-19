@@ -1,13 +1,3 @@
-"""Admin CLI for managing B2B API keys.
-
-Usage (with the venv active):
-    python -m app.admin issue "Acme Corp"     # create a key, prints it ONCE
-    python -m app.admin list                  # list issued keys (no secrets)
-    python -m app.admin revoke <key_id>       # disable a key
-
-The raw key is shown only at issue time — store it somewhere safe and hand it to
-the client. We keep only its hash.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -17,6 +7,13 @@ from sqlalchemy import select
 
 from .auth import generate_key, hash_key
 from .db import ApiKey, SessionLocal, init_db
+
+_USAGE = (
+    "Usage:\n"
+    "  python -m app.admin issue \"Acme Corp\"\n"
+    "  python -m app.admin list\n"
+    "  python -m app.admin revoke <key_id>\n"
+)
 
 
 async def issue(client_name: str) -> None:
@@ -30,7 +27,7 @@ async def issue(client_name: str) -> None:
         )
         db.add(row)
         await db.commit()
-    print("\n  API key issued — copy it now, it will NOT be shown again:\n")
+    print("\n  API key issued - copy it now, it will NOT be shown again:\n")
     print(f"    client : {client_name}")
     print(f"    key_id : {row.id}")
     print(f"    API KEY: {raw}\n")
@@ -63,7 +60,7 @@ async def revoke(key_id: str) -> None:
 def main() -> None:
     args = sys.argv[1:]
     if not args:
-        print(__doc__)
+        print(_USAGE)
         return
     cmd, *rest = args
     if cmd == "issue" and rest:
@@ -73,7 +70,7 @@ def main() -> None:
     elif cmd == "revoke" and rest:
         asyncio.run(revoke(rest[0]))
     else:
-        print(__doc__)
+        print(_USAGE)
 
 
 if __name__ == "__main__":

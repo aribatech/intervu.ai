@@ -1,8 +1,3 @@
-"""ElevenLabs à-la-carte client: TTS (interviewer voice) + STT (Scribe).
-
-Both go through our own FastAPI server via httpx — the browser never talks to
-ElevenLabs directly, so all interview logic stays server-side.
-"""
 from __future__ import annotations
 
 import httpx
@@ -24,7 +19,6 @@ def _headers() -> dict[str, str]:
 
 
 async def text_to_speech(text: str, voice_id: str | None = None) -> bytes:
-    """Synthesize `text` and return MP3 bytes."""
     s = get_settings()
     voice = voice_id or s.elevenlabs_voice_id
     url = f"{BASE_URL}/text-to-speech/{voice}"
@@ -45,7 +39,6 @@ async def text_to_speech(text: str, voice_id: str | None = None) -> bytes:
 
 
 async def speech_to_text(audio: bytes, filename: str = "answer.webm") -> str:
-    """Transcribe candidate audio via Scribe; return the recognized text."""
     s = get_settings()
     url = f"{BASE_URL}/speech-to-text"
     files = {"file": (filename, audio, "application/octet-stream")}
@@ -58,10 +51,7 @@ async def speech_to_text(audio: bytes, filename: str = "answer.webm") -> str:
     return body.get("text", "").strip()
 
 
-# ---------- Conversational AI (realtime agent) ----------
-
 async def get_signed_url(agent_id: str) -> str:
-    """Mint a short-lived signed WebSocket URL the browser uses to talk to the agent."""
     url = f"{BASE_URL}/convai/conversation/get-signed-url"
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(url, headers=_headers(), params={"agent_id": agent_id})
@@ -71,7 +61,6 @@ async def get_signed_url(agent_id: str) -> str:
 
 
 async def get_conversation(conversation_id: str) -> dict:
-    """Fetch a finished conversation (status + transcript)."""
     url = f"{BASE_URL}/convai/conversations/{conversation_id}"
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(url, headers=_headers())
@@ -96,7 +85,6 @@ def _agent_config(prompt: str, first_message: str, voice_id: str, llm: str,
 
 async def create_agent(name: str, prompt: str, first_message: str, voice_id: str,
                        llm: str, language: str = "en", temperature: float = 0.5) -> str:
-    """Create a Conversational AI agent; returns its agent_id."""
     url = f"{BASE_URL}/convai/agents/create"
     body = {"name": name, **_agent_config(prompt, first_message, voice_id, llm, language, temperature)}
     async with httpx.AsyncClient(timeout=60) as client:
@@ -108,7 +96,6 @@ async def create_agent(name: str, prompt: str, first_message: str, voice_id: str
 
 async def update_agent(agent_id: str, prompt: str, first_message: str, voice_id: str,
                        llm: str, language: str = "en", temperature: float = 0.5) -> None:
-    """Update an existing agent's prompt/voice/LLM in place."""
     url = f"{BASE_URL}/convai/agents/{agent_id}"
     body = _agent_config(prompt, first_message, voice_id, llm, language, temperature)
     async with httpx.AsyncClient(timeout=60) as client:

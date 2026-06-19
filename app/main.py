@@ -1,4 +1,3 @@
-"""Verbal AI Interviewer — FastAPI app entrypoint."""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -65,7 +64,6 @@ async def get_audio(clip_id: str) -> Response:
 
 @app.get("/i/{token}")
 async def join_page(token: str) -> FileResponse:
-    """Candidate join page. The token is read client-side from the URL path."""
     if not INTERVIEW_PAGE.exists():
         raise HTTPException(500, "interview page missing")
     return FileResponse(INTERVIEW_PAGE)

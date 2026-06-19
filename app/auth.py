@@ -1,10 +1,3 @@
-"""B2B API-key authentication.
-
-Keys look like `mp_live_<random>`. We store only a SHA-256 hash; the raw key is
-revealed once when issued (see app/admin.py). Clients authenticate with either:
-    Authorization: Bearer mp_live_xxx
-    x-api-key: mp_live_xxx
-"""
 from __future__ import annotations
 
 import hashlib

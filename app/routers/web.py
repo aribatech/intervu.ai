@@ -1,7 +1,3 @@
-"""Company-facing web pages: landing, auth, dashboard, interview detail.
-
-Server-rendered (Jinja2) with session-cookie auth — minimal JS by design.
-"""
 from __future__ import annotations
 
 from datetime import datetime
@@ -30,8 +26,6 @@ def _render(request: Request, template: str, company=None, **ctx) -> HTMLRespons
 def _redirect(url: str) -> RedirectResponse:
     return RedirectResponse(url, status_code=303)
 
-
-# ---------- public ----------
 
 @router.get("/", response_class=HTMLResponse)
 async def landing(request: Request, company: Company | None = Depends(current_company)):
@@ -112,7 +106,7 @@ async def login(
             await db.commit()
         _send_verify(background, company)
         return _render(request, "login.html", email=email,
-                       error="Your email isn't verified yet — we just re-sent the link.")
+                       error="Your email isn't verified yet - we just re-sent the link.")
     request.session["company_id"] = company.id
     return _redirect("/dashboard")
 
@@ -122,8 +116,6 @@ async def logout(request: Request):
     request.session.clear()
     return _redirect("/")
 
-
-# ---------- dashboard (auth required) ----------
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, company: Company | None = Depends(current_company),
@@ -183,7 +175,7 @@ async def create_interview_web(
     ics = None
     if when:
         ics = mailer.build_ics(
-            uid=f"{itv.id}@interview", title=f"Interview — {itv.role} at {company.name}",
+            uid=f"{itv.id}@interview", title=f"Interview - {itv.role} at {company.name}",
             description=f"Join your interview: {itv.join_url}", location=itv.join_url,
             start=when, minutes=itv.max_minutes,
         )

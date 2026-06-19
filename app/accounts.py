@@ -1,4 +1,3 @@
-"""Company accounts: password hashing + session-based auth for the web pages."""
 from __future__ import annotations
 
 import hashlib
@@ -29,7 +28,6 @@ def verify_password(password: str, stored: str) -> bool:
 
 
 async def current_company(request: Request, db: AsyncSession = Depends(get_db)) -> Company | None:
-    """Return the logged-in company, or None."""
     cid = request.session.get("company_id")
     if not cid:
         return None

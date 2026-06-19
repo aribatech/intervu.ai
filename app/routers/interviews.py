@@ -1,23 +1,8 @@
-"""Interview endpoints.
-
-B2B (API-key protected):
-  POST /v1/interviews              -> create, returns a candidate join_url
-  GET  /v1/interviews/{id}         -> status + transcript + report
-
-Candidate (join-token, no API key — the token IS the access):
-  GET  /v1/join/{token}            -> public interview meta for the join page
-  POST /v1/join/{token}/connect    -> signed URL + personalization for the realtime agent
-  POST /v1/join/{token}/snapshot   -> proctoring photo
-  POST /v1/join/{token}/complete   -> conversation ended -> fetch transcript -> score
-  POST /v1/join/{token}/finish     -> end early (no conversation)
-"""
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,11 +24,6 @@ from ..schemas import (
 
 router = APIRouter(tags=["interviews"])
 
-SNAPSHOT_DIR = Path(__file__).parent.parent.parent / "snapshots"
-SNAPSHOT_DIR.mkdir(exist_ok=True)
-
-
-# ===================== B2B (protected) =====================
 
 @router.post("/v1/interviews", response_model=InterviewCreated)
 async def create_interview(
@@ -99,8 +79,6 @@ async def get_interview(
     )
 
 
-# ===================== Candidate (join token) =====================
-
 async def _load_joinable(db: AsyncSession, token: str) -> Interview:
     itv = (
         await db.execute(select(Interview).where(Interview.join_token == token))
@@ -113,7 +91,6 @@ async def _load_joinable(db: AsyncSession, token: str) -> Interview:
 
 
 def _dynamic_vars(itv: Interview) -> dict:
-    """Personalization injected into the shared agent at connect time."""
     return {
         "candidate_name": itv.candidate_name or "the candidate",
         "company": (itv.company or itv.client_name or "the company"),
@@ -138,8 +115,6 @@ async def join_meta(token: str, db: AsyncSession = Depends(get_db)) -> Interview
 
 @router.post("/v1/join/{token}/connect", response_model=ConnectResponse)
 async def connect(token: str, db: AsyncSession = Depends(get_db)) -> ConnectResponse:
-    """Hand the browser a short-lived signed URL + personalization so it can open a
-    realtime voice session directly with the ElevenLabs agent."""
     itv = await _load_joinable(db, token)
     if itv.status == "completed":
         raise HTTPException(409, "This interview is already completed")
@@ -164,7 +139,6 @@ async def connect(token: str, db: AsyncSession = Depends(get_db)) -> ConnectResp
 
 
 async def _notify_complete(itv: Interview, db: AsyncSession, background: BackgroundTasks) -> None:
-    """Email the candidate and (if created via dashboard) the company — once."""
     if itv.notified:
         return
     itv.notified = True
@@ -189,12 +163,10 @@ async def complete(
     background: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Conversation ended: pull the transcript from ElevenLabs, store it, score it."""
     itv = await _load_joinable(db, token)
     if itv.status == "completed":
         return {"ok": True, "status": "completed"}
 
-    # transcript may take a few seconds to be ready after the call ends
     turns: list[dict] = []
     for _ in range(6):
         try:
@@ -225,40 +197,9 @@ async def complete(
     return {"ok": True, "status": "completed"}
 
 
-@router.post("/v1/join/{token}/snapshot")
-async def snapshot(
-    token: str,
-    image: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """Candidate proctoring photo, captured at join (or when camera turns on)."""
-    itv = await _load_joinable(db, token)
-    data = await image.read()
-    if not data:
-        raise HTTPException(422, "Empty image")
-    (SNAPSHOT_DIR / f"{itv.id}.jpg").write_bytes(data)
-    return {"ok": True}
-
-
-@router.get("/v1/interviews/{interview_id}/photo")
-async def get_photo(
-    interview_id: str,
-    key: ApiKey = Depends(require_api_key),
-    db: AsyncSession = Depends(get_db),
-) -> FileResponse:
-    itv = await db.get(Interview, interview_id)
-    if not itv or itv.api_key_id != key.id:
-        raise HTTPException(404, "Unknown interview")
-    path = SNAPSHOT_DIR / f"{itv.id}.jpg"
-    if not path.exists():
-        raise HTTPException(404, "No photo captured")
-    return FileResponse(path, media_type="image/jpeg")
-
-
 @router.post("/v1/join/{token}/finish")
 async def finish(token: str, background: BackgroundTasks,
                  db: AsyncSession = Depends(get_db)) -> dict:
-    """End the call early (candidate left) and generate the scored report."""
     itv = await _load_joinable(db, token)
     if itv.status != "completed":
         if itv.transcript:

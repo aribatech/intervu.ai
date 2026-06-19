@@ -1,9 +1,3 @@
-"""Tiny in-memory store for synthesized interviewer audio.
-
-Keeps the last few clips so the browser can fetch them via /audio/{clip_id}.
-For a hosted deployment, swap this for object storage (S3/GCS) or stream the
-audio directly in the turn response.
-"""
 from __future__ import annotations
 
 import uuid

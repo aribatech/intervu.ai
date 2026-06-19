@@ -1,9 +1,3 @@
-"""The interview engine — now only scores the finished conversation.
-
-The live conversation is run by the ElevenLabs Conversational AI agent (realtime
-streaming voice). Afterwards we pull the transcript and produce an evidence-cited
-report with the LLM brain here.
-"""
 from __future__ import annotations
 
 from .clients import brain

@@ -1,9 +1,3 @@
-"""Brain client — OpenAI (GPT) wrapper.
-
-Thin helper over the OpenAI SDK. Uses structured outputs
-(chat.completions.parse) so the interview engine gets validated Pydantic
-objects back instead of hand-parsed JSON.
-"""
 from __future__ import annotations
 
 from functools import lru_cache
@@ -36,7 +30,6 @@ async def parse(
     schema: type[T],
     max_tokens: int = 4000,
 ) -> T:
-    """Ask GPT and get back a validated instance of `schema`."""
     s = get_settings()
     resp = await _client().chat.completions.parse(
         model=s.openai_model,

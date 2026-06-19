@@ -1,4 +1,3 @@
-"""Shared Jinja2 templates instance."""
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,4 +1,3 @@
-"""Pydantic schemas: API shapes + the engine's structured-output contracts."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -6,8 +5,6 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-
-# ---------- B2B: create interview ----------
 
 class CreateInterviewRequest(BaseModel):
     candidate_name: str = Field(default="Candidate", max_length=120)
@@ -33,10 +30,7 @@ class InterviewCreated(BaseModel):
     expires_at: datetime
 
 
-# ---------- Candidate: conduct interview ----------
-
 class InterviewMeta(BaseModel):
-    """Public info the join page needs (no secrets)."""
     candidate_name: str
     role: str
     language: str
@@ -45,7 +39,6 @@ class InterviewMeta(BaseModel):
 
 
 class ConnectResponse(BaseModel):
-    """What the browser needs to start the realtime ElevenLabs agent session."""
     signed_url: str
     dynamic_variables: dict
 
@@ -53,8 +46,6 @@ class ConnectResponse(BaseModel):
 class CompleteRequest(BaseModel):
     conversation_id: str
 
-
-# ---------- B2B: results ----------
 
 class CompetencyScore(BaseModel):
     competency: str
@@ -80,16 +71,11 @@ class InterviewResult(BaseModel):
     report: Optional[InterviewReport] = None
 
 
-# ---------- Engine <-> LLM structured outputs ----------
-
 class OpeningPlan(BaseModel):
-    """Generated once at the start: the spoken opening line + a hidden topic plan
-    that guides (but doesn't script) the rest of the conversation."""
     opening: str = Field(description="The first spoken line: greet candidate by name, introduce yourself + company, ask the opening question.")
     plan: list[str] = Field(description="3-7 topics/questions to cover, as private guidance. Never read verbatim.")
 
 
 class InterviewerTurn(BaseModel):
-    """The interviewer's next spoken line, reacting to what the candidate said."""
     say: str = Field(description="What the interviewer says aloud next. Natural, concise, one turn.")
     end_interview: bool = Field(default=False, description="True only on the closing turn.")

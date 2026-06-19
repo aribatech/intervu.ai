@@ -41,17 +41,6 @@
   </div>
 </div>
 {% else %}
-<p class="mt-8 text-gray-500">No report yet — it's generated when the interview is completed.</p>
-{% endif %}
-
-<h3 class="font-semibold mt-10 mb-2">Transcript</h3>
-{% if it.transcript %}
-<div class="space-y-3">
-  {% for t in it.transcript %}
-  <div class="text-sm"><span class="font-semibold {{ 'text-gray-900' if t.role == 'interviewer' else 'text-blue-700' }}">{{ 'Interviewer' if t.role == 'interviewer' else it.candidate_name }}:</span> {{ t.text }}</div>
-  {% endfor %}
-</div>
-{% else %}
-<p class="text-gray-500 text-sm">No transcript recorded.</p>
+<p class="mt-8 text-gray-500">No report yet - it's generated when the interview is completed.</p>
 {% endif %}
 {% endblock %}

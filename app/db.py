@@ -1,11 +1,3 @@
-"""Async SQLAlchemy setup + ORM models.
-
-Two tables:
-  api_keys  — B2B credentials. Only a SHA-256 hash is stored; the raw key is
-              shown once at issue time.
-  interviews — one verbal interview session, created by a B2B client and joined
-              by a candidate via an unguessable token.
-"""
 from __future__ import annotations
 
 import json
@@ -57,7 +49,7 @@ class ApiKey(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     client_name: Mapped[str] = mapped_column(String)
-    key_prefix: Mapped[str] = mapped_column(String)   # shown for identification
+    key_prefix: Mapped[str] = mapped_column(String)
     key_hash: Mapped[str] = mapped_column(String, unique=True, index=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
@@ -69,12 +61,10 @@ class Interview(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     join_token: Mapped[str] = mapped_column(String, unique=True, index=True, default=new_token)
 
-    # Who created it. Either a company (web dashboard) or an API key (programmatic).
     company_id: Mapped[str] = mapped_column(String, index=True, default="")
     api_key_id: Mapped[str] = mapped_column(String, index=True, default="")
     client_name: Mapped[str] = mapped_column(String, default="")
 
-    # Interview configuration
     candidate_name: Mapped[str] = mapped_column(String, default="Candidate")
     candidate_email: Mapped[str] = mapped_column(String, default="")
     company: Mapped[str] = mapped_column(String, default="")
@@ -85,8 +75,7 @@ class Interview(Base):
     max_minutes: Mapped[int] = mapped_column(Integer, default=15)
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    # Lifecycle
-    status: Mapped[str] = mapped_column(String, default="created")  # created|in_progress|completed|expired
+    status: Mapped[str] = mapped_column(String, default="created")
     _transcript: Mapped[str] = mapped_column("transcript", Text, default="[]")
     _report: Mapped[str] = mapped_column("report", Text, default="null")
     _questions: Mapped[str] = mapped_column("questions", Text, default="[]")
@@ -98,9 +87,8 @@ class Interview(Base):
     )
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    notified: Mapped[bool] = mapped_column(Boolean, default=False)  # completion emails sent
+    notified: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    # --- JSON accessors ---
     @property
     def transcript(self) -> list[dict]:
         return json.loads(self._transcript or "[]")
@@ -126,7 +114,6 @@ class Interview(Base):
         self._questions = json.dumps(value)
 
     def add_turn(self, role: str, text: str) -> None:
-        """role is 'interviewer' or 'candidate'."""
         t = self.transcript
         t.append({"role": role, "text": text})
         self.transcript = t
@@ -146,7 +133,6 @@ class Interview(Base):
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # lightweight migrations for pre-existing DBs (no-op if column exists)
         for col, ddl in [
             ("questions", "ALTER TABLE interviews ADD COLUMN questions TEXT DEFAULT '[]'"),
             ("company", "ALTER TABLE interviews ADD COLUMN company TEXT DEFAULT ''"),
@@ -155,7 +141,6 @@ async def init_db() -> None:
             ("candidate_email", "ALTER TABLE interviews ADD COLUMN candidate_email TEXT DEFAULT ''"),
             ("notified", "ALTER TABLE interviews ADD COLUMN notified BOOLEAN DEFAULT 0"),
             ("scheduled_at", "ALTER TABLE interviews ADD COLUMN scheduled_at DATETIME"),
-            # companies — existing rows default to verified so they aren't locked out
             ("c_verified", "ALTER TABLE companies ADD COLUMN verified BOOLEAN DEFAULT 1"),
             ("c_token", "ALTER TABLE companies ADD COLUMN verify_token TEXT DEFAULT ''"),
         ]:
