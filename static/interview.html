@@ -110,6 +110,7 @@ const setIcon = (el, cls) => el.firstElementChild.className = cls;
 let camStream = null, conversation = null, conversationId = null;
 let camOn = true, micMuted = false, mirrored = true, pinnedId = null;
 let started = 0, ticking = null, finished = false;
+let prefetchedCfg = null;
 
 (async function loadMeta() {
   try {
@@ -134,6 +135,7 @@ $("enable").onclick = async () => {
   catch { camOn = false; $("lobbySub").textContent = "Camera unavailable - you can still join with voice only."; }
   await bindPreview();
   $("enable").classList.add("hidden"); $("join").classList.remove("hidden");
+  api("/connect", { method: "POST" }).then(r => r.ok ? r.json() : null).then(d => { prefetchedCfg = d; }).catch(() => {});
 };
 
 async function bindPreview() {
@@ -160,9 +162,13 @@ $("join").onclick = async () => {
 
   let cfg;
   try {
-    const r = await api("/connect", { method: "POST" });
-    if (!r.ok) { failSpinner(); return; }
-    cfg = await r.json();
+    if (prefetchedCfg?.signed_url) {
+      cfg = prefetchedCfg;
+    } else {
+      const r = await api("/connect", { method: "POST" });
+      if (!r.ok) { failSpinner(); return; }
+      cfg = await r.json();
+    }
   } catch { failSpinner(); return; }
 
   try {
