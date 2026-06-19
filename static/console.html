@@ -161,11 +161,11 @@
         const d = await r.json();
         if (!r.ok) { box.innerHTML = card(esc(d.detail || "Failed"), true); return; }
         const rep = d.report
-          ? `Overall ${d.report.overall}/100 — ${d.report.recommendation}\n\n` +
-          d.report.scores.map(s => `${s.competency}: ${s.score}/5 — ${s.evidence}`).join("\n\n") +
+          ? `Overall ${d.report.overall}/100 - ${d.report.recommendation}\n\n` +
+          d.report.scores.map(s => `${s.competency}: ${s.score}/5 - ${s.evidence}`).join("\n\n") +
           `\n\nStrengths:\n- ${d.report.strengths.join("\n- ")}` +
           `\n\nConcerns:\n- ${d.report.concerns.join("\n- ")}\n\n${d.report.summary}`
-          : "(no report yet — interview not finished)";
+          : "(no report yet - interview not finished)";
         const tr = d.transcript.map(t => `${t.role}: ${t.text}`).join("\n") || "(empty)";
         box.innerHTML = card(`
       <div>Status <b>${d.status}</b> · ${esc(d.candidate_name)} / ${esc(d.role)}</div>

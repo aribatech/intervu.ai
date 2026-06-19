@@ -3,14 +3,14 @@
 A **B2B API + single meeting-style page** for verbal AI interviews. A business
 creates an interview via an API-key-protected endpoint and gets back a **join
 URL**. The candidate opens that link, enables camera + mic, and an AI interviewer
-talks to them like someone on a video call — asking questions, listening,
-following up — then the business retrieves a scored report.
+talks to them like someone on a video call - asking questions, listening,
+following up - then the business retrieves a scored report.
 
-- **Voice** — [ElevenLabs](https://elevenlabs.io): TTS for the interviewer,
+- **Voice** - [ElevenLabs](https://elevenlabs.io): TTS for the interviewer,
   Scribe STT for the candidate. Everything routes through the API.
-- **Brain** — OpenAI (`gpt-4o`) drives the conversation and scoring via
+- **Brain** - OpenAI (`gpt-4o`) drives the conversation and scoring via
   structured outputs.
-- **Access** — `POST /v1/interviews` is gated by B2B API keys. Candidates never
+- **Access** - `POST /v1/interviews` is gated by B2B API keys. Candidates never
   see a key; they get an unguessable join token in the URL.
 
 ## Architecture
@@ -51,7 +51,7 @@ https://elevenlabs.io/app/settings/api-keys and enable those scopes.
 Issue a key with the admin CLI and hand it to the client:
 
 ```bash
-python -m app.admin issue "Acme Corp"     # prints the key ONCE — copy it
+python -m app.admin issue "Acme Corp"     # prints the key ONCE - copy it
 python -m app.admin list                  # list keys (no secrets)
 python -m app.admin revoke <key_id>       # disable a key
 ```
@@ -76,7 +76,7 @@ curl -X POST https://YOUR_HOST/v1/interviews \
 curl https://YOUR_HOST/v1/interviews/<interview_id> -H "x-api-key: mp_live_xxx"
 ```
 
-**Candidate (join token — no API key)**
+**Candidate (join token - no API key)**
 
 | Endpoint | Purpose |
 |---|---|
@@ -91,7 +91,7 @@ curl https://YOUR_HOST/v1/interviews/<interview_id> -H "x-api-key: mp_live_xxx"
 ## Notes
 
 - Turn-taking is automatic: the page records the candidate, detects ~1.5s of
-  silence, and sends the answer — with an "I'm done speaking" override button.
+  silence, and sends the answer - with an "I'm done speaking" override button.
 - Camera is self-view only (presence/realism); the AI does not analyze video.
 - Set `PUBLIC_BASE_URL` to your real host so `join_url` links are correct.
 
