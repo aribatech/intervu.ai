@@ -43,8 +43,39 @@ class ConnectResponse(BaseModel):
     dynamic_variables: dict
 
 
+class SessionRequest(BaseModel):
+    conversation_id: str = Field(default="", max_length=200)
+
+
 class CompleteRequest(BaseModel):
     conversation_id: str
+    focus_lost_count: int = Field(default=0, ge=0)
+
+
+class TranscriptTurn(BaseModel):
+    role: str = Field(max_length=20)
+    text: str = Field(max_length=4000)
+
+
+class NotesRequest(BaseModel):
+    transcript: list[TranscriptTurn] = Field(default_factory=list)
+
+
+class NotesResponse(BaseModel):
+    notes: list[str]
+
+
+class LiveNotes(BaseModel):
+    notes: list[str] = Field(
+        description="3-6 short bullet points capturing the key facts, claims, and signals "
+        "the candidate has revealed so far. Neutral, factual, no scoring."
+    )
+
+
+class FeedbackRequest(BaseModel):
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
+    comment: str = Field(default="", max_length=2000)
+    focus_lost_count: int = Field(default=0, ge=0)
 
 
 class CompetencyScore(BaseModel):

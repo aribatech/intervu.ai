@@ -3,6 +3,9 @@
 {% block content %}
 <a href="/dashboard" class="text-sm text-gray-500 hover:text-gray-900">&larr; Back to dashboard</a>
 
+{% if not it %}
+<p class="mt-8 text-gray-500">This interview couldn't be found.</p>
+{% else %}
 <div class="flex items-start justify-between mt-3">
   <div>
     <h1 class="text-2xl font-bold tracking-tight">{{ it.candidate_name }}</h1>
@@ -42,5 +45,43 @@
 </div>
 {% else %}
 <p class="mt-8 text-gray-500">No report yet - it's generated when the interview is completed.</p>
+{% endif %}
+
+{% if it.notes %}
+<div class="mt-6 border border-gray-200 rounded-xl p-5">
+  <h3 class="font-semibold mb-2">AI meeting notes</h3>
+  <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">{% for n in it.notes %}<li>{{ n }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<div class="mt-6 grid sm:grid-cols-2 gap-4">
+  {% if it.feedback_rating or it.feedback_text %}
+  <div class="border border-gray-200 rounded-xl p-5">
+    <h3 class="font-semibold mb-1">Candidate feedback</h3>
+    {% if it.feedback_rating %}<div class="text-sm text-yellow-500">{{ '★' * it.feedback_rating }}<span class="text-gray-300">{{ '★' * (5 - it.feedback_rating) }}</span></div>{% endif %}
+    {% if it.feedback_text %}<p class="text-sm text-gray-600 mt-1">"{{ it.feedback_text }}"</p>{% endif %}
+  </div>
+  {% endif %}
+  {% if it.focus_lost_count %}
+  <div class="border border-amber-200 bg-amber-50 rounded-xl p-5">
+    <h3 class="font-semibold mb-1">Integrity signal</h3>
+    <p class="text-sm text-amber-800">Candidate switched away from the interview tab <b>{{ it.focus_lost_count }}</b> time{{ 's' if it.focus_lost_count != 1 else '' }}.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% if it.transcript %}
+<div class="mt-6 border border-gray-200 rounded-xl p-5">
+  <h3 class="font-semibold mb-3">Transcript</h3>
+  <div class="space-y-3 max-h-[28rem] overflow-y-auto">
+    {% for t in it.transcript %}
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">{{ 'Interviewer' if t.role == 'interviewer' else it.candidate_name }}</div>
+      <p class="text-sm text-gray-700">{{ t.text }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 {% endif %}
 {% endblock %}

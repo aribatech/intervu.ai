@@ -76,9 +76,15 @@ class Interview(Base):
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     status: Mapped[str] = mapped_column(String, default="created")
+    conversation_id: Mapped[str] = mapped_column(String, default="", index=True)
     _transcript: Mapped[str] = mapped_column("transcript", Text, default="[]")
     _report: Mapped[str] = mapped_column("report", Text, default="null")
     _questions: Mapped[str] = mapped_column("questions", Text, default="[]")
+    _notes: Mapped[str] = mapped_column("notes", Text, default="[]")
+
+    feedback_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    feedback_text: Mapped[str] = mapped_column(Text, default="")
+    focus_lost_count: Mapped[int] = mapped_column(Integer, default=0)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
     expires_at: Mapped[datetime] = mapped_column(
@@ -113,6 +119,14 @@ class Interview(Base):
     def questions(self, value: list[str]) -> None:
         self._questions = json.dumps(value)
 
+    @property
+    def notes(self) -> list[str]:
+        return json.loads(self._notes or "[]")
+
+    @notes.setter
+    def notes(self, value: list[str]) -> None:
+        self._notes = json.dumps(value)
+
     def add_turn(self, role: str, text: str) -> None:
         t = self.transcript
         t.append({"role": role, "text": text})
@@ -141,6 +155,11 @@ async def init_db() -> None:
             ("candidate_email", "ALTER TABLE interviews ADD COLUMN candidate_email TEXT DEFAULT ''"),
             ("notified", "ALTER TABLE interviews ADD COLUMN notified BOOLEAN DEFAULT 0"),
             ("scheduled_at", "ALTER TABLE interviews ADD COLUMN scheduled_at DATETIME"),
+            ("conversation_id", "ALTER TABLE interviews ADD COLUMN conversation_id TEXT DEFAULT ''"),
+            ("notes", "ALTER TABLE interviews ADD COLUMN notes TEXT DEFAULT '[]'"),
+            ("feedback_rating", "ALTER TABLE interviews ADD COLUMN feedback_rating INTEGER"),
+            ("feedback_text", "ALTER TABLE interviews ADD COLUMN feedback_text TEXT DEFAULT ''"),
+            ("focus_lost_count", "ALTER TABLE interviews ADD COLUMN focus_lost_count INTEGER DEFAULT 0"),
             ("c_verified", "ALTER TABLE companies ADD COLUMN verified BOOLEAN DEFAULT 1"),
             ("c_token", "ALTER TABLE companies ADD COLUMN verify_token TEXT DEFAULT ''"),
         ]:

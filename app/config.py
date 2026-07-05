@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     interview_ttl_minutes: int = 1440
 
-    app_name: str = "Voxa AI"
+    app_name: str = "IntervuAI"
     secret_key: str = "dev-secret-change-me"
 
     smtp_host: str = ""

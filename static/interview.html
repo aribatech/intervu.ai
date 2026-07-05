@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Voxa AI</title>
+<title>IntervuAI</title>
 <link rel="icon" href="/logo.svg" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -16,8 +16,10 @@
         floatup: { '0%': { transform: 'translateY(0) scale(.5)', opacity: '0' },
                    '12%': { transform: 'translateY(-12px) scale(1)', opacity: '1' },
                    '100%': { transform: 'translateY(-280px) scale(1.15)', opacity: '0' } },
+        blink: { '0%,80%,100%': { opacity: '.2' }, '40%': { opacity: '1' } },
       },
-      animation: { ripple: 'ripple 1.4s infinite', floatup: 'floatup 2.5s ease-out forwards' },
+      animation: { ripple: 'ripple 1.4s infinite', floatup: 'floatup 2.5s ease-out forwards',
+                   blink: 'blink 1.4s infinite both' },
     } },
   };
 </script>
@@ -40,46 +42,88 @@
     </div>
   </div>
   <div class="flex flex-col items-center gap-4">
-    <button id="enable" class="bg-neutral-900 text-white px-8 py-3.5 font-semibold hover:bg-black disabled:opacity-50">Enable camera</button>
+    <button id="enable" class="bg-neutral-900 text-white px-8 py-3.5 font-semibold hover:bg-black disabled:opacity-50">Enable camera &amp; mic</button>
+    <div id="micCheck" class="hidden flex-col items-center gap-2">
+      <div class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-microphone"></i><span id="micMsg">Say something to test your mic</span></div>
+      <div class="w-56 h-2 rounded-full bg-gray-100 overflow-hidden"><div id="micLevel" class="h-full w-0 bg-emerald-500 transition-[width] duration-75"></div></div>
+    </div>
     <button id="join" class="bg-neutral-900 text-white px-8 py-3.5 font-semibold hover:bg-black hidden">Join interview</button>
     <p class="text-xs text-gray-400 max-w-sm text-center leading-relaxed">
-      Speak naturally - the interviewer hears you in real time and replies like a real call. You can interrupt anytime.
+      Speak naturally - the interviewer hears you in real time and replies like a real call. You can interrupt anytime, or type in the chat.
     </p>
   </div>
 </section>
 
 <section id="meeting" class="hidden fixed inset-0 bg-[#202124] text-white flex flex-col">
-  <div id="stage" class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 min-h-0">
-    <div id="interviewerTile" class="group relative rounded-xl bg-[#3c4043] overflow-hidden flex items-center justify-center">
-      <div id="spinner" class="absolute w-8 h-8 rounded-full border-[3px] border-white/20 border-t-white animate-spin"></div>
-      <div id="orb" class="w-32 h-32 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-500 opacity-0 transition-opacity duration-300"></div>
-      <span class="absolute bottom-3 left-3.5 text-sm text-white flex items-center gap-2 [text-shadow:0_1px_3px_rgba(0,0,0,.7)]"><i id="intMic" class="fa-solid fa-microphone text-xs"></i>Interviewer</span>
-      <button class="tmenu-btn absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-30" data-menu="intMenu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-      <div id="intMenu" class="tmenu hidden absolute top-12 right-2.5 bg-[#2a2b2e] border border-white/10 rounded-lg min-w-[11rem] p-1.5 z-40 shadow-2xl">
-        <button data-act="pin" data-tile="interviewerTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-thumbtack w-4 text-center"></i><span>Pin</span></button>
-        <button data-act="full" data-tile="interviewerTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-expand w-4 text-center"></i><span>Fullscreen</span></button>
+  <div class="flex-1 flex min-h-0">
+    <div id="stage" class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 min-h-0">
+      <div id="interviewerTile" class="group relative rounded-xl bg-[#3c4043] overflow-hidden flex items-center justify-center">
+        <div id="spinner" class="absolute w-8 h-8 rounded-full border-[3px] border-white/20 border-t-white animate-spin"></div>
+        <div id="orb" class="w-32 h-32 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-500 opacity-0 transition-opacity duration-300"></div>
+        <span class="absolute bottom-3 left-3.5 text-sm text-white flex items-center gap-2 [text-shadow:0_1px_3px_rgba(0,0,0,.7)]"><i id="intMic" class="fa-solid fa-microphone text-xs"></i>Interviewer</span>
+        <button class="tmenu-btn absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-30" data-menu="intMenu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+        <div id="intMenu" class="tmenu hidden absolute top-12 right-2.5 bg-[#2a2b2e] border border-white/10 rounded-lg min-w-[11rem] p-1.5 z-40 shadow-2xl">
+          <button data-act="pin" data-tile="interviewerTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-thumbtack w-4 text-center"></i><span>Pin</span></button>
+          <button data-act="full" data-tile="interviewerTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-expand w-4 text-center"></i><span>Fullscreen</span></button>
+        </div>
+      </div>
+      <div id="selfTile" class="group relative rounded-xl bg-[#3c4043] overflow-hidden flex items-center justify-center">
+        <video id="self" autoplay muted playsinline class="w-full h-full object-cover -scale-x-100"></video>
+        <div id="selfOff" class="absolute inset-0 flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none"><div id="selfAvatar" class="w-32 h-32 rounded-full bg-[#5f6368] text-[#e8eaed] flex items-center justify-center text-5xl font-medium">Y</div></div>
+        <span class="absolute bottom-3 left-3.5 text-sm text-white flex items-center gap-2 [text-shadow:0_1px_3px_rgba(0,0,0,.7)]"><i id="selfMic" class="fa-solid fa-microphone text-xs"></i><span id="selfName">You</span></span>
+        <button class="tmenu-btn absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-30" data-menu="selfMenu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+        <div id="selfMenu" class="tmenu hidden absolute top-12 right-2.5 bg-[#2a2b2e] border border-white/10 rounded-lg min-w-[11rem] p-1.5 z-40 shadow-2xl">
+          <button data-act="pin" data-tile="selfTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-thumbtack w-4 text-center"></i><span>Pin</span></button>
+          <button data-act="mirror" data-tile="selfTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-arrow-right-arrow-left w-4 text-center"></i><span>Turn off mirror</span></button>
+          <button data-act="full" data-tile="selfTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-expand w-4 text-center"></i><span>Fullscreen</span></button>
+        </div>
       </div>
     </div>
-    <div id="selfTile" class="group relative rounded-xl bg-[#3c4043] overflow-hidden flex items-center justify-center">
-      <video id="self" autoplay muted playsinline class="w-full h-full object-cover -scale-x-100"></video>
-      <div id="selfOff" class="absolute inset-0 flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none"><div id="selfAvatar" class="w-32 h-32 rounded-full bg-[#5f6368] text-[#e8eaed] flex items-center justify-center text-5xl font-medium">Y</div></div>
-      <span class="absolute bottom-3 left-3.5 text-sm text-white flex items-center gap-2 [text-shadow:0_1px_3px_rgba(0,0,0,.7)]"><i id="selfMic" class="fa-solid fa-microphone text-xs"></i><span id="selfName">You</span></span>
-      <button class="tmenu-btn absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-30" data-menu="selfMenu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-      <div id="selfMenu" class="tmenu hidden absolute top-12 right-2.5 bg-[#2a2b2e] border border-white/10 rounded-lg min-w-[11rem] p-1.5 z-40 shadow-2xl">
-        <button data-act="pin" data-tile="selfTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-thumbtack w-4 text-center"></i><span>Pin</span></button>
-        <button data-act="mirror" data-tile="selfTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-arrow-right-arrow-left w-4 text-center"></i><span>Turn off mirror</span></button>
-        <button data-act="full" data-tile="selfTile" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-[#e8eaed] rounded-md hover:bg-white/10 text-left"><i class="fa-solid fa-expand w-4 text-center"></i><span>Fullscreen</span></button>
+
+    <!-- Side panel: Chat + Notes -->
+    <aside id="panel" class="hidden absolute md:relative inset-y-0 right-0 z-40 w-full sm:w-[24rem] bg-[#1b1c1f] border-l border-white/10 flex flex-col">
+      <div class="flex items-center gap-1 px-3 pt-3">
+        <button id="tabChat" class="panel-tab flex-1 py-2.5 text-sm font-medium rounded-lg text-[#e8eaed]"><i class="fa-regular fa-comment mr-2"></i>Chat</button>
+        <button id="tabNotes" class="panel-tab flex-1 py-2.5 text-sm font-medium rounded-lg text-[#9aa0a6]"><i class="fa-regular fa-note-sticky mr-2"></i>Notes</button>
+        <button id="panelClose" class="w-9 h-9 rounded-full text-[#9aa0a6] hover:bg-white/10 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
       </div>
-    </div>
+
+      <!-- Chat -->
+      <div id="chatPane" class="flex-1 flex flex-col min-h-0">
+        <div id="chatLog" class="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm"></div>
+        <div id="typing" class="hidden px-4 pb-1 text-xs text-[#9aa0a6] items-center gap-1">
+          Interviewer is typing<span class="animate-blink">.</span><span class="animate-blink [animation-delay:.2s]">.</span><span class="animate-blink [animation-delay:.4s]">.</span>
+        </div>
+        <div class="p-3 border-t border-white/10 flex items-end gap-2">
+          <textarea id="chatInput" rows="1" placeholder="Type a message…" class="flex-1 resize-none max-h-28 bg-[#2a2b2e] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-[#9aa0a6] focus:outline-none focus:ring-1 focus:ring-[#8ab4f8]"></textarea>
+          <button id="chatSend" class="w-10 h-10 rounded-full bg-[#8ab4f8] text-[#202124] flex items-center justify-center hover:brightness-110 shrink-0"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div id="notesPane" class="hidden flex-1 flex flex-col min-h-0">
+        <div class="px-4 pt-3 pb-2 flex items-center justify-between">
+          <span class="text-xs uppercase tracking-wide text-[#9aa0a6]">AI meeting notes</span>
+          <button id="notesRefresh" class="text-xs text-[#8ab4f8] hover:underline flex items-center gap-1"><i class="fa-solid fa-arrows-rotate"></i><span id="notesRefreshLabel">Refresh</span></button>
+        </div>
+        <div id="notesLog" class="flex-1 overflow-y-auto px-4 pb-4 space-y-2 text-sm text-[#e8eaed]">
+          <p class="text-[#9aa0a6] text-sm">Notes appear here as the conversation gets going.</p>
+        </div>
+      </div>
+    </aside>
   </div>
+
   <div class="grid grid-cols-3 items-center px-5 py-3">
     <div class="hidden sm:flex items-center gap-3 text-sm text-neutral-300 min-w-0">
       <span id="timer" class="tabular-nums">00:00</span><span class="text-neutral-600">|</span><span id="hdrRole" class="truncate">Interview</span>
     </div>
-    <div class="relative flex items-center justify-center gap-2.5 col-start-2">
+    <div class="relative flex flex-wrap items-center justify-center gap-2.5 col-start-2">
       <button id="mMic" class="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4e51] text-white flex items-center justify-center transition" title="Turn off microphone"><i class="fa-solid fa-microphone"></i></button>
       <button id="mCam" class="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4e51] text-white flex items-center justify-center transition" title="Turn off camera"><i class="fa-solid fa-video"></i></button>
+      <button id="mChat" class="relative w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4e51] text-white flex items-center justify-center transition" title="Chat"><i class="fa-regular fa-comment"></i><span id="chatDot" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#8ab4f8]"></span></button>
+      <button id="mNotes" class="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4e51] text-white flex items-center justify-center transition" title="AI notes"><i class="fa-regular fa-note-sticky"></i></button>
       <button id="mReact" class="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4e51] text-white flex items-center justify-center transition" title="Send a reaction"><i class="fa-solid fa-face-smile"></i></button>
+      <button id="mFeedback" class="w-12 h-12 rounded-full bg-[#3c4043] hover:bg-[#4a4e51] text-white flex items-center justify-center transition" title="Feedback / report a problem"><i class="fa-regular fa-flag"></i></button>
       <div id="reactBar" class="hidden absolute bottom-16 left-1/2 -translate-x-1/2 bg-[#2a2b2e] border border-white/10 rounded-full p-1.5 flex gap-0.5 shadow-2xl">
         <button data-e="👍" class="w-10 h-10 rounded-full text-xl hover:bg-white/10 transition">👍</button>
         <button data-e="❤️" class="w-10 h-10 rounded-full text-xl hover:bg-white/10 transition">❤️</button>
@@ -97,7 +141,31 @@
   <div class="w-14 h-14 rounded-full bg-gray-900 text-white flex items-center justify-center"><i class="fa-solid fa-check text-xl"></i></div>
   <h1 class="text-2xl font-bold tracking-tight">Interview complete</h1>
   <p class="text-gray-500 max-w-sm">Thanks for your time - you can close this tab.</p>
+  <button id="endFeedback" class="mt-3 border border-gray-300 px-5 py-2.5 text-sm font-semibold hover:border-gray-900">Share feedback</button>
 </section>
+
+<!-- Feedback modal -->
+<div id="fbModal" class="hidden fixed inset-0 z-[70] bg-black/50 flex items-center justify-center px-5">
+  <div class="bg-white text-gray-900 rounded-2xl w-full max-w-sm p-6" onclick="event.stopPropagation()">
+    <h2 class="text-lg font-bold tracking-tight">How was the interview?</h2>
+    <p class="text-sm text-gray-500 mt-1">Your feedback helps us improve. Optional.</p>
+    <div id="stars" class="flex gap-2 mt-4 text-2xl text-gray-300">
+      <button data-v="1"><i class="fa-solid fa-star"></i></button>
+      <button data-v="2"><i class="fa-solid fa-star"></i></button>
+      <button data-v="3"><i class="fa-solid fa-star"></i></button>
+      <button data-v="4"><i class="fa-solid fa-star"></i></button>
+      <button data-v="5"><i class="fa-solid fa-star"></i></button>
+    </div>
+    <textarea id="fbText" rows="3" placeholder="Anything to tell us? (or report a problem)" class="w-full border-[1.5px] border-gray-200 rounded-lg px-3 py-2 mt-4 text-sm focus:outline-none focus:border-gray-900"></textarea>
+    <div class="flex justify-end gap-2 mt-4">
+      <button id="fbCancel" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-900">Not now</button>
+      <button id="fbSubmit" class="px-5 py-2 text-sm font-semibold bg-neutral-900 text-white hover:bg-black">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast (guardrails / notices) -->
+<div id="toast" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-[80] bg-[#2a2b2e] text-white text-sm px-4 py-2.5 rounded-full shadow-2xl border border-white/10"></div>
 
 <script type="module">
 import { Conversation } from "https://esm.sh/@elevenlabs/client";
@@ -105,17 +173,28 @@ import { Conversation } from "https://esm.sh/@elevenlabs/client";
 const TOKEN = location.pathname.split("/").filter(Boolean).pop();
 const $ = (id) => document.getElementById(id);
 const api = (p, o) => fetch(`/v1/join/${TOKEN}${p}`, o);
+const jpost = (p, body) => api(p, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 const setIcon = (el, cls) => el.firstElementChild.className = cls;
+const esc = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 let camStream = null, conversation = null, conversationId = null;
 let camOn = true, micMuted = false, mirrored = true, pinnedId = null;
-let started = 0, ticking = null, finished = false;
-let prefetchedCfg = null;
+let started = 0, ticking = null, finished = false, inCall = false;
+let prefetchedCfg = null, maxMinutes = 15, warned = false;
+let audioCtx = null, micAnalyser = null, micRAF = null;
+
+// panel + chat + notes state
+let panelOpen = false, activeTab = "chat";
+const transcript = [];
+const pendingUser = [];
+let notesLoading = false, notesDirty = false, notesTimer = null, unread = 0;
+let focusLost = 0, ratingValue = 0, feedbackSent = false;
 
 (async function loadMeta() {
   try {
     const r = await api(""); if (!r.ok) throw new Error((await r.json()).detail || "unavailable");
     const m = await r.json();
+    maxMinutes = m.max_minutes || 15;
     $("lobbyTitle").textContent = `Interview for ${m.role}`;
     $("lobbySub").textContent = `Hi ${m.candidate_name} - about ${m.max_minutes} min, in ${m.language}.`;
     $("selfName").textContent = m.candidate_name;
@@ -129,17 +208,52 @@ let prefetchedCfg = null;
   }
 })();
 
+/* ---------- Lobby: camera + mic test ---------- */
 $("enable").onclick = async () => {
-  $("enable").disabled = true; $("previewMsg").textContent = "Requesting camera…";
-  try { camStream = await navigator.mediaDevices.getUserMedia({ video: true }); camOn = true; }
-  catch { camOn = false; $("lobbySub").textContent = "Camera unavailable - you can still join with voice only."; }
+  $("enable").disabled = true; $("previewMsg").textContent = "Requesting camera & mic…";
+  try { camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); camOn = true; }
+  catch {
+    try { camStream = await navigator.mediaDevices.getUserMedia({ audio: true }); camOn = false; }
+    catch { camStream = null; camOn = false; }
+    $("lobbySub").textContent = "Camera unavailable - you can still join with voice only.";
+  }
   await bindPreview();
-  $("enable").classList.add("hidden"); $("join").classList.remove("hidden");
+  startMicMeter();
+  $("enable").classList.add("hidden");
+  $("micCheck").classList.remove("hidden"); $("micCheck").classList.add("flex");
+  $("join").classList.remove("hidden");
   api("/connect", { method: "POST" }).then(r => r.ok ? r.json() : null).then(d => { prefetchedCfg = d; }).catch(() => {});
 };
 
+function startMicMeter() {
+  const track = camStream && camStream.getAudioTracks()[0];
+  if (!track) { $("micMsg").textContent = "No microphone detected - the interview needs a mic."; return; }
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = audioCtx.createMediaStreamSource(camStream);
+    micAnalyser = audioCtx.createAnalyser(); micAnalyser.fftSize = 512;
+    src.connect(micAnalyser);
+    const data = new Uint8Array(micAnalyser.frequencyBinCount);
+    let peak = false;
+    const loop = () => {
+      micAnalyser.getByteFrequencyData(data);
+      let sum = 0; for (const v of data) sum += v;
+      const level = Math.min(100, (sum / data.length) * 2.2);
+      $("micLevel").style.width = level + "%";
+      if (level > 12 && !peak) { peak = true; $("micMsg").textContent = "Mic is working"; }
+      micRAF = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch { $("micMsg").textContent = "Couldn't read mic level, but you can still join."; }
+}
+function stopMicMeter() {
+  if (micRAF) cancelAnimationFrame(micRAF);
+  try { audioCtx?.close(); } catch {}
+  audioCtx = null; micAnalyser = null; micRAF = null;
+}
+
 async function bindPreview() {
-  const v = $("preview"); const has = camOn && !!camStream;
+  const v = $("preview"); const has = camOn && !!camStream && camStream.getVideoTracks().length > 0;
   v.srcObject = camStream || null; if (has) { try { await v.play(); } catch {} }
   v.classList.toggle("opacity-0", !has);
   $("previewOff").classList.toggle("opacity-0", has);
@@ -149,27 +263,33 @@ async function bindPreview() {
 }
 
 $("camToggle").onclick = async () => {
-  if (!camStream) { try { camStream = await navigator.mediaDevices.getUserMedia({ video: true }); } catch { return; } }
+  if (!camStream || camStream.getVideoTracks().length === 0) {
+    try {
+      const vs = await navigator.mediaDevices.getUserMedia({ video: true });
+      vs.getVideoTracks().forEach(t => camStream ? camStream.addTrack(t) : (camStream = vs));
+    } catch { return; }
+  }
   camOn = !camOn; camStream.getVideoTracks().forEach(t => t.enabled = camOn);
   await bindPreview();
 };
 
+/* ---------- Join ---------- */
 $("join").onclick = async () => {
+  stopMicMeter();
   $("self").srcObject = camStream || null; if (camStream) { try { await $("self").play(); } catch {} }
   setCamUI(camOn);
   $("lobby").classList.add("hidden"); $("meeting").classList.remove("hidden");
-  started = Date.now(); ticking = setInterval(tick, 1000);
+  started = Date.now(); ticking = setInterval(tick, 1000); inCall = true;
 
   let cfg;
   try {
-    if (prefetchedCfg?.signed_url) {
-      cfg = prefetchedCfg;
-    } else {
+    if (prefetchedCfg?.signed_url) cfg = prefetchedCfg;
+    else {
       const r = await api("/connect", { method: "POST" });
-      if (!r.ok) { failSpinner(); return; }
+      if (!r.ok) { showConnError((await r.json().catch(() => ({}))).detail); return; }
       cfg = await r.json();
     }
-  } catch { failSpinner(); return; }
+  } catch { showConnError(); return; }
 
   try {
     conversation = await Conversation.startSession({
@@ -178,6 +298,8 @@ $("join").onclick = async () => {
       onConnect: ({ conversationId: id }) => {
         conversationId = id || conversationId;
         $("spinner").classList.add("hidden"); $("orb").classList.remove("opacity-0");
+        if (conversationId) jpost("/session", { conversation_id: conversationId }).catch(() => {});
+        startNotesTimer();
       },
       onModeChange: ({ mode }) => {
         const speaking = mode === "speaking";
@@ -185,13 +307,141 @@ $("join").onclick = async () => {
         setActive($("interviewerTile"), speaking);
         setActive($("selfTile"), !speaking && !micMuted);
       },
+      onMessage: (m) => handleMessage(m),
+      onAgentTyping: () => showTyping(true),
+      onGuardrailTriggered: () => toast("Let's keep this focused on the interview."),
       onDisconnect: () => finalize(),
       onError: () => {},
     });
     if (!conversationId && conversation.getId) { try { conversationId = conversation.getId(); } catch {} }
-  } catch { failSpinner(); }
+  } catch { showConnError(); }
 };
 
+function showConnError(detail) {
+  $("spinner").classList.add("hidden");
+  const orb = $("orb"); orb.classList.remove("opacity-0", "animate-ripple");
+  orb.className = "w-32 h-32 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center opacity-100";
+  orb.innerHTML = `<div class="text-center px-4">
+      <div class="text-sm text-red-200 mb-2">${esc(detail || "Couldn't connect to the interviewer.")}</div>
+      <button id="retryBtn" class="text-xs bg-white text-[#202124] px-3 py-1.5 rounded-full font-semibold">Try again</button>
+    </div>`;
+  $("retryBtn").onclick = () => location.reload();
+}
+
+/* ---------- Chat + notes ---------- */
+function handleMessage({ message, role, source }) {
+  const isAgent = (role || (source === "ai" ? "agent" : "user")) === "agent";
+  const text = (message || "").trim(); if (!text) return;
+  if (isAgent) showTyping(false);
+  // dedupe echoes of messages the candidate typed
+  if (!isAgent) {
+    const i = pendingUser.indexOf(text);
+    if (i !== -1) { pendingUser.splice(i, 1); return; }
+  }
+  transcript.push({ role: isAgent ? "interviewer" : "candidate", text });
+  addChatMessage(isAgent ? "agent" : "user", text);
+  notesDirty = true;
+  if (isAgent && !panelOpen) { unread++; $("chatDot").classList.remove("hidden"); }
+}
+
+function addChatMessage(who, text) {
+  const log = $("chatLog");
+  const row = document.createElement("div");
+  const mine = who === "user";
+  row.className = "flex " + (mine ? "justify-end" : "justify-start");
+  row.innerHTML = `<div class="max-w-[85%] rounded-2xl px-3.5 py-2 ${mine
+    ? "bg-[#8ab4f8] text-[#202124]"
+    : "bg-[#2a2b2e] text-[#e8eaed]"}">
+      <div class="text-[10px] uppercase tracking-wide ${mine ? "text-[#1f3a5f]/70" : "text-[#9aa0a6]"} mb-0.5">${mine ? "You" : "Interviewer"}</div>
+      <div class="whitespace-pre-wrap break-words">${esc(text)}</div>
+    </div>`;
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+}
+
+function showTyping(on) {
+  const t = $("typing");
+  t.classList.toggle("hidden", !on); t.classList.toggle("flex", on);
+  if (on) { const log = $("chatLog"); log.scrollTop = log.scrollHeight; }
+}
+
+function sendChat() {
+  const el = $("chatInput"); const text = el.value.trim();
+  if (!text || !conversation) return;
+  try { conversation.sendUserMessage(text); } catch { toast("Couldn't send - are you connected?"); return; }
+  pendingUser.push(text);
+  transcript.push({ role: "candidate", text });
+  addChatMessage("user", text);
+  notesDirty = true;
+  el.value = ""; el.style.height = "auto";
+}
+$("chatSend").onclick = sendChat;
+$("chatInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
+});
+$("chatInput").addEventListener("input", (e) => {
+  const el = e.target; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 112) + "px";
+  try { conversation?.sendUserActivity?.(); } catch {}
+});
+
+function startNotesTimer() {
+  if (notesTimer) return;
+  notesTimer = setInterval(() => refreshNotes(false), 20000);
+}
+async function refreshNotes(force) {
+  if (notesLoading) return;
+  if (!force && (!notesDirty || transcript.length < 2)) return;
+  notesLoading = true; notesDirty = false;
+  $("notesRefreshLabel").textContent = "Updating…";
+  try {
+    const r = await jpost("/notes", { transcript });
+    if (r.ok) renderNotes((await r.json()).notes);
+  } catch {} finally {
+    notesLoading = false; $("notesRefreshLabel").textContent = "Refresh";
+  }
+}
+function renderNotes(notes) {
+  const log = $("notesLog");
+  if (!notes || !notes.length) {
+    log.innerHTML = `<p class="text-[#9aa0a6] text-sm">Notes appear here as the conversation gets going.</p>`;
+    return;
+  }
+  log.innerHTML = notes.map(n =>
+    `<div class="flex gap-2"><i class="fa-solid fa-circle text-[5px] mt-2 text-[#8ab4f8]"></i><span>${esc(n)}</span></div>`
+  ).join("");
+}
+$("notesRefresh").onclick = () => refreshNotes(true);
+
+/* ---------- Panel toggling ---------- */
+function setTab(tab) {
+  activeTab = tab;
+  const chat = tab === "chat";
+  $("chatPane").classList.toggle("hidden", !chat);
+  $("chatPane").classList.toggle("flex", chat);
+  $("notesPane").classList.toggle("hidden", chat);
+  $("notesPane").classList.toggle("flex", !chat);
+  $("tabChat").classList.toggle("bg-white/10", chat);
+  $("tabChat").classList.toggle("text-[#e8eaed]", chat);
+  $("tabChat").classList.toggle("text-[#9aa0a6]", !chat);
+  $("tabNotes").classList.toggle("bg-white/10", !chat);
+  $("tabNotes").classList.toggle("text-[#e8eaed]", !chat);
+  $("tabNotes").classList.toggle("text-[#9aa0a6]", chat);
+  if (!chat) refreshNotes(true);
+  if (chat) { unread = 0; $("chatDot").classList.add("hidden"); }
+}
+function openPanel(tab) {
+  if (panelOpen && activeTab === tab) { closePanel(); return; }
+  panelOpen = true; $("panel").classList.remove("hidden"); $("panel").classList.add("flex");
+  setTab(tab);
+}
+function closePanel() { panelOpen = false; $("panel").classList.add("hidden"); $("panel").classList.remove("flex"); }
+$("mChat").onclick = () => openPanel("chat");
+$("mNotes").onclick = () => openPanel("notes");
+$("tabChat").onclick = () => setTab("chat");
+$("tabNotes").onclick = () => setTab("notes");
+$("panelClose").onclick = () => closePanel();
+
+/* ---------- Controls ---------- */
 function setActive(tile, on) {
   ["ring-2","ring-[#8ab4f8]","ring-inset"].forEach(c => tile.classList.toggle(c, on));
 }
@@ -202,9 +452,13 @@ function setCamUI(on) {
   $("mCam").title = on ? "Turn off camera" : "Turn on camera";
   const so = $("selfOff"); so.classList.toggle("opacity-0", on); so.classList.toggle("pointer-events-none", on);
 }
-const tick = () => { const s=((Date.now()-started)/1000)|0;
-  $("timer").textContent = `${String((s/60)|0).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; };
-function failSpinner(){ $("spinner").classList.add("!border-t-red-500"); }
+const tick = () => {
+  const s = ((Date.now() - started) / 1000) | 0;
+  $("timer").textContent = `${String((s/60)|0).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+  const remaining = maxMinutes * 60 - s;
+  if (!warned && remaining <= 60 && remaining > 0) { warned = true; toast("About a minute left in the interview."); }
+  if (remaining <= 0) { toast("Time's up - wrapping up the interview."); finalize(); }
+};
 
 $("mMic").onclick = async () => {
   micMuted = !micMuted;
@@ -216,7 +470,9 @@ $("mMic").onclick = async () => {
   if (micMuted) setActive($("selfTile"), false);
 };
 $("mCam").onclick = async () => {
-  if (!camStream) { try { camStream = await navigator.mediaDevices.getUserMedia({ video: true }); $("self").srcObject = camStream; await $("self").play(); } catch { return; } }
+  if (!camStream || camStream.getVideoTracks().length === 0) {
+    try { const vs = await navigator.mediaDevices.getUserMedia({ video: true }); vs.getVideoTracks().forEach(t => camStream ? camStream.addTrack(t) : (camStream = vs)); $("self").srcObject = camStream; await $("self").play(); } catch { return; }
+  }
   camOn = !camOn; camStream.getVideoTracks().forEach(t => t.enabled = camOn);
   setCamUI(camOn);
 };
@@ -267,17 +523,65 @@ document.addEventListener("click", () => {
   document.querySelectorAll(".tmenu").forEach(x => x.classList.add("hidden"));
 });
 
+/* ---------- Toast ---------- */
+let toastTimer = null;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.remove("hidden");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add("hidden"), 3500);
+}
+
+/* ---------- Guardrails ---------- */
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && inCall && !finished) {
+    focusLost++;
+    toast("Please stay on this tab during the interview.");
+  }
+});
+window.addEventListener("beforeunload", (e) => {
+  if (inCall && !finished) { e.preventDefault(); e.returnValue = ""; }
+});
+window.addEventListener("pagehide", () => {
+  if (inCall && !finished && conversationId) {
+    const body = JSON.stringify({ conversation_id: conversationId, focus_lost_count: focusLost });
+    try { navigator.sendBeacon(`/v1/join/${TOKEN}/complete`, new Blob([body], { type: "application/json" })); } catch {}
+  }
+});
+
+/* ---------- Feedback ---------- */
+function openFeedback() { $("fbModal").classList.remove("hidden"); }
+function closeFeedback() { $("fbModal").classList.add("hidden"); }
+$("mFeedback").onclick = openFeedback;
+$("endFeedback").onclick = openFeedback;
+$("fbCancel").onclick = closeFeedback;
+$("fbModal").onclick = closeFeedback;
+$("stars").querySelectorAll("button").forEach(b => b.onclick = () => {
+  ratingValue = +b.dataset.v;
+  $("stars").querySelectorAll("button").forEach(x =>
+    x.classList.toggle("text-yellow-400", +x.dataset.v <= ratingValue));
+  $("stars").querySelectorAll("button").forEach(x =>
+    x.classList.toggle("text-gray-300", +x.dataset.v > ratingValue));
+});
+$("fbSubmit").onclick = async () => {
+  const payload = { rating: ratingValue || null, comment: $("fbText").value.trim(), focus_lost_count: focusLost };
+  try { await jpost("/feedback", payload); } catch {}
+  feedbackSent = true; closeFeedback(); toast("Thanks for your feedback!");
+  $("endFeedback").textContent = "Feedback sent"; $("endFeedback").disabled = true;
+  $("endFeedback").classList.add("opacity-60");
+};
+
+/* ---------- Finalize ---------- */
 function finalize() {
-  if (finished) return; finished = true;
-  clearInterval(ticking);
+  if (finished) return; finished = true; inCall = false;
+  clearInterval(ticking); if (notesTimer) clearInterval(notesTimer); stopMicMeter();
   $("meeting").classList.add("hidden"); $("end").classList.remove("hidden");
   try { conversation?.endSession?.(); } catch {}
   if (camStream) camStream.getTracks().forEach(t => t.stop());
   if (conversationId) {
-    api("/complete", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ conversation_id: conversationId }) }).catch(()=>{});
+    jpost("/complete", { conversation_id: conversationId, focus_lost_count: focusLost }).catch(() => {});
   } else {
-    api("/finish", { method:"POST" }).catch(()=>{});
+    api("/finish", { method: "POST" }).catch(() => {});
   }
+  if (!feedbackSent) setTimeout(openFeedback, 900);
 }
 </script>
 <a href="http://ariba.techyst.net/" target="_blank" rel="noopener"

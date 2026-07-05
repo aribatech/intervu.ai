@@ -16,10 +16,14 @@ from ..schemas import (
     CompleteRequest,
     ConnectResponse,
     CreateInterviewRequest,
+    FeedbackRequest,
     InterviewCreated,
     InterviewMeta,
     InterviewReport,
     InterviewResult,
+    NotesRequest,
+    NotesResponse,
+    SessionRequest,
 )
 
 router = APIRouter(tags=["interviews"])
@@ -138,6 +142,53 @@ async def connect(token: str, db: AsyncSession = Depends(get_db)) -> ConnectResp
     return ConnectResponse(signed_url=signed_url, dynamic_variables=_dynamic_vars(itv))
 
 
+@router.post("/v1/join/{token}/session")
+async def save_session(
+    token: str, req: SessionRequest, db: AsyncSession = Depends(get_db)
+) -> dict:
+    """Persist the ElevenLabs conversation_id so the server can recover/finalize
+    the interview even if the candidate's browser never calls /complete."""
+    itv = await _load_joinable(db, token)
+    if req.conversation_id and not itv.conversation_id:
+        itv.conversation_id = req.conversation_id
+        await db.commit()
+    return {"ok": True}
+
+
+@router.post("/v1/join/{token}/notes", response_model=NotesResponse)
+async def live_notes(
+    token: str, req: NotesRequest, db: AsyncSession = Depends(get_db)
+) -> NotesResponse:
+    """Generate running AI notes from the transcript captured so far."""
+    itv = await _load_joinable(db, token)
+    turns = [{"role": t.role, "text": t.text} for t in req.transcript if t.text.strip()]
+    if not turns or not get_settings().brain_enabled:
+        return NotesResponse(notes=itv.notes)
+    try:
+        notes = await engine.build_notes(itv.role, itv.job_description, turns)
+        itv.notes = notes
+        await db.commit()
+    except Exception:
+        notes = itv.notes
+    return NotesResponse(notes=notes)
+
+
+@router.post("/v1/join/{token}/feedback")
+async def submit_feedback(
+    token: str, req: FeedbackRequest, db: AsyncSession = Depends(get_db)
+) -> dict:
+    """Candidate's feedback about the interview experience (+ integrity signal)."""
+    itv = await _load_joinable(db, token)
+    if req.rating is not None:
+        itv.feedback_rating = req.rating
+    if req.comment.strip():
+        itv.feedback_text = req.comment.strip()
+    if req.focus_lost_count:
+        itv.focus_lost_count = max(itv.focus_lost_count, req.focus_lost_count)
+    await db.commit()
+    return {"ok": True}
+
+
 async def _notify_complete(itv: Interview, db: AsyncSession, background: BackgroundTasks) -> None:
     if itv.notified:
         return
@@ -164,13 +215,19 @@ async def complete(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     itv = await _load_joinable(db, token)
+    if req.focus_lost_count:
+        itv.focus_lost_count = max(itv.focus_lost_count, req.focus_lost_count)
+    if req.conversation_id and not itv.conversation_id:
+        itv.conversation_id = req.conversation_id
     if itv.status == "completed":
+        await db.commit()
         return {"ok": True, "status": "completed"}
 
+    conversation_id = req.conversation_id or itv.conversation_id
     turns: list[dict] = []
     for _ in range(6):
         try:
-            conv = await elevenlabs.get_conversation(req.conversation_id)
+            conv = await elevenlabs.get_conversation(conversation_id)
         except elevenlabs.ElevenLabsError:
             conv = {}
         raw = conv.get("transcript") or []
@@ -202,6 +259,18 @@ async def finish(token: str, background: BackgroundTasks,
                  db: AsyncSession = Depends(get_db)) -> dict:
     itv = await _load_joinable(db, token)
     if itv.status != "completed":
+        if not itv.transcript and itv.conversation_id:
+            try:
+                conv = await elevenlabs.get_conversation(itv.conversation_id)
+                turns = [
+                    {"role": "interviewer" if m.get("role") == "agent" else "candidate",
+                     "text": (m.get("message") or "").strip()}
+                    for m in (conv.get("transcript") or []) if (m.get("message") or "").strip()
+                ]
+                if turns:
+                    itv.transcript = turns
+            except elevenlabs.ElevenLabsError:
+                pass
         if itv.transcript:
             try:
                 report = await engine.build_report(itv)
